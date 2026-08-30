@@ -666,8 +666,8 @@ export default function AirdropPage() {
               gasLimitEstimated = await disperse.disperseToken.estimateGas(skipHolderCA, batchAddrs, batchAmounts, { nonce });
               gasLimitEstimated = (gasLimitEstimated * 115n) / 100n; // 15% buffer
             } catch (e) {
-               addLog(`   ❌ Simulasi Error: Transaksi gagal (Saldo/Tax/Revert). Info: ${e.shortMessage || e.message}`);
-               continue;
+               gasLimitEstimated = BigInt(60000 + batchSample * 35000);
+               addLog(`   ⚠️ Simulasi lambat/terkendala, beralih ke batas gas manual: ${gasLimitEstimated}`);
             }
             tx = await disperse.disperseToken(skipHolderCA, batchAddrs, batchAmounts, { nonce, gasLimit: gasLimitEstimated });
           } else {
@@ -675,8 +675,8 @@ export default function AirdropPage() {
               gasLimitEstimated = await disperse.disperseEther.estimateGas(batchAddrs, batchAmounts, { value: batchTotalWei, nonce });
               gasLimitEstimated = (gasLimitEstimated * 115n) / 100n; // 15% buffer
             } catch (e) {
-               addLog(`   ❌ Simulasi Error: Transaksi gagal (Saldo/Revert). Info: ${e.shortMessage || e.message}`);
-               continue;
+               gasLimitEstimated = BigInt(50000 + batchSample * 10000);
+               addLog(`   ⚠️ Simulasi lambat/terkendala, beralih ke batas gas manual: ${gasLimitEstimated}`);
             }
             tx = await disperse.disperseEther(batchAddrs, batchAmounts, { value: batchTotalWei, nonce, gasLimit: gasLimitEstimated });
           }
