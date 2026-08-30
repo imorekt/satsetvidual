@@ -457,8 +457,8 @@ export default function ScanAlamatPage() {
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 2rem', width: '100%', maxWidth: '1200px', margin: '0 auto', height: 'calc(100vh - 90px - 1.5rem)', maxHeight: 'calc(100vh - 90px - 1.5rem)', minHeight: 0 }}>
-      <div style={{ background: '#0d0d12', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 2rem', width: '100%', maxWidth: '1200px', margin: '0 auto', height: 'calc(100vh - 90px - 1.5rem)', maxHeight: 'calc(100vh - 90px - 1.5rem)', minHeight: 0, minWidth: 0 }}>
+      <div style={{ background: '#0d0d12', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
         
         {(userRole !== 'Premium' && userRole !== 'Developer') && (
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(13, 13, 18, 0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -472,12 +472,12 @@ export default function ScanAlamatPage() {
           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: 'white', textAlign: 'center' }}>🔍 Scan Alamat</h2>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '1.25rem', minHeight: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '1.25rem', minHeight: 0, minWidth: 0 }}>
           
-          <div style={{ display: 'flex', gap: '2rem', flex: 1, minHeight: 0 }}>
+          <div style={{ display: 'flex', gap: '2rem', flex: 1, minHeight: 0, minWidth: 0 }}>
             {/* Input Kiri */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 0 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 0, minWidth: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <label style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500', margin: 0 }}>Contract Addresses (CA)</label>
                   <button 
@@ -585,7 +585,7 @@ export default function ScanAlamatPage() {
             <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', marginTop: '-1.5rem', marginBottom: '-1.5rem' }}></div>
 
             {/* Terminal Kanan */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: 0 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: 0, minWidth: 0 }}>
               <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Terminal Output:</span>
                 {uniqueAddresses.length > 0 && (
