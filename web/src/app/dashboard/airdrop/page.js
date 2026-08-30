@@ -40,7 +40,7 @@ const DISPERSE_ABI = [
     "inputs": [
       {"name": "token", "type": "address"},
       {"name": "recipients", "type": "address[]"},
-      {"name": "amountPerWallet", "type": "uint256[]"}
+      {"name": "amountPerWallet", "type": "uint256"}
     ],
     "name": "disperseToken",
     "outputs": [],
@@ -663,13 +663,13 @@ export default function AirdropPage() {
           
           if (mode === 'erc20') {
             try {
-              gasLimitEstimated = await disperse.disperseToken.estimateGas(skipHolderCA, batchAddrs, batchAmounts, { nonce });
+              gasLimitEstimated = await disperse.disperseToken.estimateGas(skipHolderCA, batchAddrs, amountPerWalletWei, { nonce });
               gasLimitEstimated = (gasLimitEstimated * 115n) / 100n; // 15% buffer
             } catch (e) {
                gasLimitEstimated = BigInt(60000 + batchSample * 35000);
                addLog(`   ⚠️ Simulasi lambat/terkendala, beralih ke batas gas manual: ${gasLimitEstimated}`);
             }
-            tx = await disperse.disperseToken(skipHolderCA, batchAddrs, batchAmounts, { nonce, gasLimit: gasLimitEstimated });
+            tx = await disperse.disperseToken(skipHolderCA, batchAddrs, amountPerWalletWei, { nonce, gasLimit: gasLimitEstimated });
           } else {
             try {
               gasLimitEstimated = await disperse.disperseEther.estimateGas(batchAddrs, batchAmounts, { value: batchTotalWei, nonce });
