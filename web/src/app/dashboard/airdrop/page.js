@@ -10,6 +10,19 @@ const getRpcUrl = (network) => {
   return "https://mainnet.base.org";
 };
 
+const PRIMARY_RPC = "https://base-mainnet.core.chainstack.com/777f7306a808d70ba68c63ff713a2f2b";
+const createFallbackProvider = (networkUrl) => {
+  if (networkUrl.includes("base.org") || networkUrl.includes("base") || networkUrl.includes("chainstack")) {
+    const primary = new ethers.JsonRpcProvider(PRIMARY_RPC);
+    const secondary = new ethers.JsonRpcProvider(networkUrl);
+    return new ethers.FallbackProvider([
+      { provider: primary, priority: 1, stallTimeout: 2000 },
+      { provider: secondary, priority: 2 }
+    ]);
+  }
+  return new ethers.JsonRpcProvider(networkUrl);
+};
+
 // ABI Constants
 const DISPERSE_ABI = [
   {
@@ -241,7 +254,7 @@ export default function AirdropPage() {
       }
       try {
         const rpcUrl = getRpcUrl(scanNetwork);
-        const provider = new ethers.JsonRpcProvider(rpcUrl);
+        const provider = createFallbackProvider(rpcUrl);
         const contract = new ethers.Contract(skipHolderCA, ERC20_ABI, provider);
         const sym = await contract.symbol();
         
@@ -301,7 +314,7 @@ export default function AirdropPage() {
     
     try {
       const rpcUrl = getRpcUrl(scanNetwork);
-      const provider = new ethers.JsonRpcProvider(rpcUrl);
+      const provider = createFallbackProvider(rpcUrl);
       
       const rawLines = walletList.split('\n');
       const uniqueAddrs = [];
@@ -411,8 +424,8 @@ export default function AirdropPage() {
     try {
       // 1. Setup Provider & Wallet
       const rpcUrl = getRpcUrl(scanNetwork);
-      addLog(`[NET] Menghubungkan ke ${rpcUrl}`);
-      const provider = new ethers.JsonRpcProvider(rpcUrl);
+      addLog(`[NET] Menghubungkan ke jaringan...`);
+      const provider = createFallbackProvider(rpcUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
       
       const disperseAddress = ethers.getAddress(disperseContract);
@@ -634,11 +647,26 @@ export default function AirdropPage() {
           let tx;
           const nonce = await wallet.provider.getTransactionCount(wallet.address, 'pending');
           const batchSample = batchAddrs.length;
-          const manualGasLimit = mode === 'erc20' ? 100000 + batchSample * 40000 : 50000 + batchSample * 10000;
+          let gasLimitEstimated;
+          
           if (mode === 'erc20') {
-            tx = await disperse.disperseToken(skipHolderCA, batchAddrs, batchAmounts, { nonce, gasLimit: manualGasLimit });
+            try {
+              gasLimitEstimated = await disperse.disperseToken.estimateGas(skipHolderCA, batchAddrs, batchAmounts, { nonce });
+              gasLimitEstimated = (gasLimitEstimated * 115n) / 100n; // 15% buffer
+            } catch (e) {
+               addLog(`   ❌ Simulasi Error: Transaksi gagal (Saldo/Tax/Revert). Info: ${e.shortMessage || e.message}`);
+               continue;
+            }
+            tx = await disperse.disperseToken(skipHolderCA, batchAddrs, batchAmounts, { nonce, gasLimit: gasLimitEstimated });
           } else {
-            tx = await disperse.disperseEther(batchAddrs, batchAmounts, { value: batchTotalWei, nonce, gasLimit: manualGasLimit });
+            try {
+              gasLimitEstimated = await disperse.disperseEther.estimateGas(batchAddrs, batchAmounts, { value: batchTotalWei, nonce });
+              gasLimitEstimated = (gasLimitEstimated * 115n) / 100n; // 15% buffer
+            } catch (e) {
+               addLog(`   ❌ Simulasi Error: Transaksi gagal (Saldo/Revert). Info: ${e.shortMessage || e.message}`);
+               continue;
+            }
+            tx = await disperse.disperseEther(batchAddrs, batchAmounts, { value: batchTotalWei, nonce, gasLimit: gasLimitEstimated });
           }
           
           addLog(`\n[DISPERSE] Batch ${i + 1}/${batches.length} Tx: ${tx.hash}\n   🔗 https://basescan.org/tx/${tx.hash}`);

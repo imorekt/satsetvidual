@@ -229,7 +229,7 @@ export default function ScreenerV2() {
     const fetchProfiles = async () => {
         const telegramUser = localStorage.getItem('userName') || 'default_user';
         try {
-            const response = await fetch(`/api/autosell/profiles?userName=${telegramUser}`);
+            const response = await fetch(`/api/autosell/profiles?userName=${telegramUser}`, { cache: 'no-store' });
             const data = await response.json();
             if (response.ok && data.profiles) {
                 setProfiles(data.profiles);

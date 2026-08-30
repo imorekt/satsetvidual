@@ -16,8 +16,10 @@ const RPC_URLS = [
 
 const getRandomRpc = () => RPC_URLS[Math.floor(Math.random() * RPC_URLS.length)];
 
-async function rpcRequest(method, params, retry = 0) {
-  const url = getRandomRpc();
+const PRIMARY_RPC = "https://base-mainnet.core.chainstack.com/777f7306a808d70ba68c63ff713a2f2b";
+
+async function rpcRequest(method, params, retry = 0, usePrimary = true) {
+  const url = usePrimary ? PRIMARY_RPC : getRandomRpc();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
   try {
@@ -33,16 +35,20 @@ async function rpcRequest(method, params, retry = 0) {
     return data.result;
   } catch (err) {
     clearTimeout(timeoutId);
+    if (usePrimary) {
+      // Fallback to secondary immediately
+      return rpcRequest(method, params, retry, false);
+    }
     if (retry < 15) {
       await new Promise(r => setTimeout(r, 500));
-      return rpcRequest(method, params, retry + 1);
+      return rpcRequest(method, params, retry + 1, false);
     }
     throw err;
   }
 }
 
-async function rpcBatchRequest(payloads, retry = 0) {
-  const url = getRandomRpc();
+async function rpcBatchRequest(payloads, retry = 0, usePrimary = true) {
+  const url = usePrimary ? PRIMARY_RPC : getRandomRpc();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout for batch
   try {
@@ -57,9 +63,12 @@ async function rpcBatchRequest(payloads, retry = 0) {
     return data;
   } catch (err) {
     clearTimeout(timeoutId);
+    if (usePrimary) {
+      return rpcBatchRequest(payloads, retry, false);
+    }
     if (retry < 10) {
       await new Promise(r => setTimeout(r, 500));
-      return rpcBatchRequest(payloads, retry + 1);
+      return rpcBatchRequest(payloads, retry + 1, false);
     }
     return [];
   }
