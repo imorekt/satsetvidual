@@ -487,7 +487,7 @@ export default function AirdropPage() {
       }
       
       // GAS ESTIMATION ASCII BOX
-      const BATCH_SIZE = 500;
+      const BATCH_SIZE = 200;
       const n_batches = Math.ceil(recipients.length / BATCH_SIZE);
       let ethPriceUsd = 0;
       try {
@@ -614,7 +614,7 @@ export default function AirdropPage() {
       if (checkAborted(signal)) throw new Error("Dibatalkan User");
 
       // 5. Chunking & Disperse
-      const BATCH_SIZE = 500;
+      const BATCH_SIZE = 200;
       const batches = [];
       for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
         batches.push(recipients.slice(i, i + BATCH_SIZE));
