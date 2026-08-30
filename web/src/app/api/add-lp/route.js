@@ -24,6 +24,12 @@ function snapToSpacing(tick, spacing) {
     return Math.round(tick / spacing) * spacing;
 }
 
+function snapToSpacingFloor(tick, spacing) {
+    const maxValid = Math.floor(887272 / spacing) * spacing;
+    tick = Math.max(-maxValid, Math.min(maxValid, tick));
+    return Math.floor(tick / spacing) * spacing;
+}
+
 function getSqrtAtTick(tick) {
     const val = Math.sqrt(Math.pow(1.0001, tick)) * Math.pow(2, 96);
     return BigInt(Math.trunc(val));
@@ -97,7 +103,7 @@ export async function POST(request) {
 
       const currentTick = getTickAtPrice(initialPriceEth);
       const tickLower = snapToSpacing(-887272, TICK_SPACING);
-      const tickUpper = snapToSpacing(currentTick, TICK_SPACING);
+      const tickUpper = snapToSpacingFloor(currentTick, TICK_SPACING);
 
       const sqrtLower = getSqrtAtTick(tickLower);
       const sqrtUpper = getSqrtAtTick(tickUpper);
