@@ -11,14 +11,25 @@ const getRpcUrl = (network) => {
 };
 
 const PRIMARY_RPC = "https://base-mainnet.core.chainstack.com/777f7306a808d70ba68c63ff713a2f2b";
+
+class FallbackJsonRpcProvider extends ethers.JsonRpcProvider {
+  constructor(primary, secondary) {
+    super(primary);
+    this.secondaryProvider = new ethers.JsonRpcProvider(secondary);
+  }
+  async send(method, params) {
+    try {
+      return await super.send(method, params);
+    } catch (e) {
+      console.warn("Primary RPC failed:", e.message, "- Falling back to secondary");
+      return await this.secondaryProvider.send(method, params);
+    }
+  }
+}
+
 const createFallbackProvider = (networkUrl) => {
   if (networkUrl.includes("base.org") || networkUrl.includes("base") || networkUrl.includes("chainstack")) {
-    const primary = new ethers.JsonRpcProvider(PRIMARY_RPC);
-    const secondary = new ethers.JsonRpcProvider(networkUrl);
-    return new ethers.FallbackProvider([
-      { provider: primary, priority: 1, stallTimeout: 2000 },
-      { provider: secondary, priority: 2 }
-    ]);
+    return new FallbackJsonRpcProvider(PRIMARY_RPC, networkUrl);
   }
   return new ethers.JsonRpcProvider(networkUrl);
 };
@@ -338,7 +349,7 @@ export default function AirdropPage() {
 
       const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
       const multicallAbi = ["function tryAggregate(bool requireSuccess, tuple(address target, bytes callData)[] calls) view returns (tuple(bool success, bytes returnData)[] returnData)"];
-      const multicall = new ethers.Contract(MULTICALL3, multicallAbi, provider);
+      let multicall = new ethers.Contract(MULTICALL3, multicallAbi, provider);
       
       const tokenIface = new ethers.Interface(ERC20_ABI);
       const BATCH_SIZE = 500;
@@ -429,7 +440,7 @@ export default function AirdropPage() {
       const wallet = new ethers.Wallet(privateKey, provider);
       
       const disperseAddress = ethers.getAddress(disperseContract);
-      const disperse = new ethers.Contract(disperseAddress, DISPERSE_ABI, wallet);
+      let disperse = new ethers.Contract(disperseAddress, DISPERSE_ABI, wallet);
       
       const mode = skipHolderCA.trim() === '' ? 'eth' : 'erc20';
       let tokenContract = null;
@@ -646,6 +657,7 @@ export default function AirdropPage() {
         try {
           let tx;
           const nonce = await wallet.provider.getTransactionCount(wallet.address, 'pending');
+          
           const batchSample = batchAddrs.length;
           let gasLimitEstimated;
           
