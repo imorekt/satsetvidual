@@ -249,8 +249,9 @@
 .dashboard-main {
   flex: 1;
   min-width: 0;
+  max-width: calc(100vw - 250px);
   margin-left: 250px;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 0 1.5rem 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -260,6 +261,7 @@
 
 .dashboard-container.sidebar-collapsed .dashboard-main {
   margin-left: 0px;
+  max-width: 100vw;
 }
 
 /* Header */

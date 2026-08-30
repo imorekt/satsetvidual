@@ -535,13 +535,13 @@ export default function ScanAlamatPage() {
                 </div>
               </div>
               
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', gap: '1rem', minWidth: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '500' }}>Durasi (Ke belakang)</label>
                   <select 
                     value={durationMode} 
                     onChange={(e) => setDurationMode(e.target.value)}
-                    style={{ padding: '0.8rem', background: '#13131a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', outline: 'none' }}
+                    style={{ width: '100%', minWidth: 0, padding: '0.8rem', background: '#13131a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', outline: 'none' }}
                   >
                     <option value="1">1 Jam (3600 blok)</option>
                     <option value="2">3 Jam</option>
@@ -553,18 +553,18 @@ export default function ScanAlamatPage() {
                   </select>
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '500' }}>Network</label>
-                  <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', flex: 1, minWidth: 0 }}>
                     <button
                       onClick={() => setScanNetwork('BASE')}
-                      style={{ flex: 1, background: scanNetwork === 'BASE' ? 'rgba(0, 123, 255, 0.1)' : '#13131a', border: scanNetwork === 'BASE' ? '1px solid #007bff' : '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: scanNetwork === 'BASE' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.3s' }}>
-                      <span style={{ width: '8px', height: '8px', background: scanNetwork === 'BASE' ? '#007bff' : 'transparent', border: scanNetwork === 'BASE' ? 'none' : '2px solid rgba(255,255,255,0.2)', borderRadius: '50%', display: 'inline-block' }}></span> BASE
+                      style={{ flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', background: scanNetwork === 'BASE' ? 'rgba(0, 123, 255, 0.1)' : '#13131a', border: scanNetwork === 'BASE' ? '1px solid #007bff' : '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: scanNetwork === 'BASE' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.3s' }}>
+                      <span style={{ width: '8px', height: '8px', background: scanNetwork === 'BASE' ? '#007bff' : 'transparent', border: scanNetwork === 'BASE' ? 'none' : '2px solid rgba(255,255,255,0.2)', borderRadius: '50%', display: 'inline-block', flexShrink: 0 }}></span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>BASE</span>
                     </button>
                     <button
                       onClick={() => alert("Segera Hadir")}
-                      style={{ flex: 1, background: scanNetwork === 'ROBINHOOD' ? 'rgba(0, 190, 100, 0.1)' : '#13131a', border: scanNetwork === 'ROBINHOOD' ? '1px solid #00be64' : '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: scanNetwork === 'ROBINHOOD' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.3s' }}>
-                      <span style={{ width: '8px', height: '8px', background: scanNetwork === 'ROBINHOOD' ? '#00be64' : 'transparent', border: scanNetwork === 'ROBINHOOD' ? 'none' : '2px solid rgba(255,255,255,0.2)', borderRadius: '50%', display: 'inline-block' }}></span> ROBINHOOD
+                      style={{ flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', background: scanNetwork === 'ROBINHOOD' ? 'rgba(0, 190, 100, 0.1)' : '#13131a', border: scanNetwork === 'ROBINHOOD' ? '1px solid #00be64' : '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: scanNetwork === 'ROBINHOOD' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.3s' }}>
+                      <span style={{ width: '8px', height: '8px', background: scanNetwork === 'ROBINHOOD' ? '#00be64' : 'transparent', border: scanNetwork === 'ROBINHOOD' ? 'none' : '2px solid rgba(255,255,255,0.2)', borderRadius: '50%', display: 'inline-block', flexShrink: 0 }}></span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>ROBINHOOD</span>
                     </button>
                   </div>
                 </div>
@@ -595,7 +595,7 @@ export default function ScanAlamatPage() {
                   </div>
                 )}
               </div>
-              <pre ref={terminalRef} style={{ flex: 1, background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '1rem', overflowY: 'auto', overflowX: 'hidden', color: '#00d180', fontSize: '0.8rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', margin: 0 }}>
+              <pre ref={terminalRef} style={{ flex: 1, minWidth: 0, background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '1rem', overflowY: 'auto', overflowX: 'hidden', color: '#00d180', fontSize: '0.8rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'monospace', margin: 0 }}>
                 {terminalLog || ">_ Menunggu perintah scan..."}
               </pre>
             </div>
