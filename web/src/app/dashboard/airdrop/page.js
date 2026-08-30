@@ -831,11 +831,9 @@ export default function AirdropPage() {
                         style={{ flex: 1, padding: '0.8rem', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                       >
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
-                          {selectedProfileId === 'manual'
-                            ? '-- Input CA Manual --'
-                            : (availableTokens.find(t => t.ca === selectedProfileId)
-                              ? `${availableTokens.find(t => t.ca === selectedProfileId).name} (${availableTokens.find(t => t.ca === selectedProfileId).symbol})`
-                              : 'Pilih Profil...')}
+                          {availableTokens.find(t => t.ca === selectedProfileId)
+                            ? `${availableTokens.find(t => t.ca === selectedProfileId).name} (${availableTokens.find(t => t.ca === selectedProfileId).symbol})`
+                            : 'Pilih Profil...'}
                         </span>
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>▼</span>
                       </div>
@@ -862,31 +860,12 @@ export default function AirdropPage() {
                           </div>
                         ))}
 
-                        <div
-                          onClick={() => {
-                            setSelectedProfileId('manual');
-                            setSkipHolderCA('');
-                            setIsDropdownOpen(false);
-                          }}
-                          style={{ padding: '0.8rem', cursor: 'pointer', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#1a1a24'}
-                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                          -- Input CA Manual --
-                        </div>
+
                       </div>
                     )}
                   </div>
 
-                  {selectedProfileId === 'manual' && (
-                    <input
-                      type="text"
-                      value={skipHolderCA}
-                      onChange={(e) => setSkipHolderCA(e.target.value)}
-                      placeholder="Ketik 0x..."
-                      style={{ width: '100%', padding: '0.8rem', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', outline: 'none', textAlign: 'center' }}
-                    />
-                  )}
+
                 </div>
               );
             })()}
