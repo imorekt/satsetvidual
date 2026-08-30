@@ -74,14 +74,13 @@ export default function AirdropPage() {
   const terminalRef = useRef(null);
 
   const states = useMemo(() => ({
-    disperseContract, skipHolderCA, nominalAmount, walletList, scanNetwork, selectedProfileId: 'manual'
-  }), [disperseContract, skipHolderCA, nominalAmount, walletList, scanNetwork]);
+    disperseContract, skipHolderCA, nominalAmount, scanNetwork, selectedProfileId: 'manual'
+  }), [disperseContract, skipHolderCA, nominalAmount, scanNetwork]);
 
   const setStates = useMemo(() => ({
     disperseContract: setDisperseContract,
     skipHolderCA: setSkipHolderCA,
     nominalAmount: setNominalAmount,
-    walletList: setWalletList,
     scanNetwork: setScanNetwork
   }), []);
 
