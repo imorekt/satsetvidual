@@ -509,7 +509,7 @@ export default function AirdropPage() {
       if (mode === 'erc20') {
         gas_approve = 60000;
         const batchSample = Math.min(recipients.length, BATCH_SIZE);
-        avg_gas_per_batch = 35000 + batchSample * 35000;
+        avg_gas_per_batch = 35000 + batchSample * 25000;
       } else {
         const batchSample = Math.min(recipients.length, BATCH_SIZE);
         avg_gas_per_batch = 35000 + batchSample * 6800;
@@ -517,10 +517,10 @@ export default function AirdropPage() {
       const gas_disperse_total = avg_gas_per_batch * n_batches;
       const gas_per_wallet = gas_approve + gas_disperse_total;
       
-      const fee_avg = Number(ethers.formatEther(BigInt(Math.floor(avg_gas_per_batch)) * maxFee));
-      const fee_per_wallet = Number(ethers.formatEther(BigInt(Math.floor(gas_per_wallet)) * maxFee));
-      const fee_approve_eth = Number(ethers.formatEther(BigInt(gas_approve) * maxFee));
-      const disp_total = Number(ethers.formatEther(BigInt(Math.floor(gas_disperse_total)) * maxFee));
+      const fee_avg = Number(ethers.formatEther(BigInt(Math.floor(avg_gas_per_batch)) * baseFee));
+      const fee_per_wallet = Number(ethers.formatEther(BigInt(Math.floor(gas_per_wallet)) * baseFee));
+      const fee_approve_eth = Number(ethers.formatEther(BigInt(gas_approve) * baseFee));
+      const disp_total = Number(ethers.formatEther(BigInt(Math.floor(gas_disperse_total)) * baseFee));
       const fee_total_eth = fee_per_wallet;
 
       const toUsd = (eth) => ethPriceUsd ? `(≈ $${(eth * ethPriceUsd).toFixed(4)} USD)` : "";
