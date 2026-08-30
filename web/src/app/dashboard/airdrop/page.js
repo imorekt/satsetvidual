@@ -16,7 +16,7 @@ const DISPERSE_ABI = [
     "inputs": [
       {"name": "token", "type": "address"},
       {"name": "recipients", "type": "address[]"},
-      {"name": "amountPerWallet", "type": "uint256"}
+      {"name": "amountPerWallet", "type": "uint256[]"}
     ],
     "name": "disperseToken",
     "outputs": [],
@@ -26,7 +26,7 @@ const DISPERSE_ABI = [
   {
     "inputs": [
       {"name": "recipients", "type": "address[]"},
-      {"name": "amountPerWallet", "type": "uint256"}
+      {"name": "amountPerWallet", "type": "uint256[]"}
     ],
     "name": "disperseEther",
     "outputs": [],
@@ -613,7 +613,7 @@ export default function AirdropPage() {
           const batchSample = batchAddrs.length;
           const manualGasLimit = mode === 'erc20' ? 100000 + batchSample * 40000 : 50000 + batchSample * 10000;
           if (mode === 'erc20') {
-            tx = await disperse.disperseToken(skipHolderCA, batchAddrs, amountPerWalletWei, { nonce, gasLimit: manualGasLimit });
+            tx = await disperse.disperseToken(skipHolderCA, batchAddrs, batchAmounts, { nonce, gasLimit: manualGasLimit });
           } else {
             tx = await disperse.disperseEther(batchAddrs, batchAmounts, { value: batchTotalWei, nonce, gasLimit: manualGasLimit });
           }
