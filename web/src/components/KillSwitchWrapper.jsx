@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 // URL Gist hanya dipakai untuk mengecek 'active' (Killswitch)
 const LICENSE_URL = "https://gist.githubusercontent.com/imorekt/f6bf1d9e712d4a6213126bd60e1293ce/raw/license.json";
 // URL GitHub API untuk mengecek versi terbaru secara otomatis
-const GITHUB_RELEASES_API = "https://api.github.com/repos/imorekt/websell/releases/latest";
+const GITHUB_RELEASES_API = "https://api.github.com/repos/imorekt/satsetvidual/releases/latest";
 
 const compareVersions = (v1, v2) => {
   const p1 = String(v1).replace('v','').split('.').map(Number);
@@ -48,7 +48,7 @@ export default function KillSwitchWrapper({ children }) {
                 }
                 
                 setNeedsUpdate(true);
-                setUpdateUrl(data.html_url || "https://github.com/imorekt/websell/releases");
+                setUpdateUrl(data.html_url || "https://github.com/imorekt/satsetvidual/releases");
                 setMinVer(latestVersion.replace('v', ''));
               }
             }

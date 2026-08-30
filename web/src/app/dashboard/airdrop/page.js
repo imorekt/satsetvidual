@@ -880,6 +880,24 @@ export default function AirdropPage() {
                             }}>
                               <span style={{ fontWeight: 'bold', color: 'white', fontSize: '0.9rem' }}>{token.name} <span style={{ color: '#94a3b8' }}>({token.symbol})</span></span>
                             </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newList = deployedTokens.filter(t => t.ca !== token.ca || t.privateKey !== token.privateKey);
+                                setDeployedTokens(newList);
+                                localStorage.setItem('deployed_tokens', JSON.stringify(newList));
+                                if (selectedProfileId === token.ca) {
+                                  setSelectedProfileId('manual');
+                                  setSkipHolderCA('');
+                                }
+                              }}
+                              style={{ background: 'transparent', border: 'none', color: '#ef4444', padding: '0 0.8rem', cursor: 'pointer', fontSize: '1.2rem', transition: 'color 0.2s' }}
+                              onMouseOver={(e) => e.target.style.color = '#f87171'}
+                              onMouseOut={(e) => e.target.style.color = '#ef4444'}
+                              title="Hapus Profil"
+                            >
+                              &times;
+                            </button>
                           </div>
                         ))}
 
