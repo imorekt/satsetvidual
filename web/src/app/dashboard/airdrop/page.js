@@ -646,7 +646,14 @@ export default function AirdropPage() {
           const receipt = await tx.wait(1);
           addLog(`   ✓ Selesai di blok #${receipt.blockNumber}`);
         } catch (e) {
-          addLog(`   ❌ Gagal Batch ${i+1}: ${e.shortMessage || e.message}`);
+          console.error("Disperse error:", e);
+          let errMsg = e.shortMessage || e.message;
+          if (e.info && e.info.error && e.info.error.message) {
+            errMsg = e.info.error.message;
+          } else if (e.error && e.error.message) {
+            errMsg = e.error.message;
+          }
+          addLog(`   ❌ Gagal Batch ${i+1}: ${errMsg}`);
         }
       }
       
