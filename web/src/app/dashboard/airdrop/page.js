@@ -244,14 +244,38 @@ export default function AirdropPage() {
         const provider = new ethers.JsonRpcProvider(rpcUrl);
         const contract = new ethers.Contract(skipHolderCA, ERC20_ABI, provider);
         const sym = await contract.symbol();
-        if (active) setSkipHolderSymbol(sym);
+        
+        let tName = sym;
+        try { tName = await contract.name(); } catch(e) {}
+        
+        if (active) {
+          setSkipHolderSymbol(sym);
+          
+          // Auto-save the CA profile so it appears in the Profil Token list automatically
+          const pk = typeof privateKey !== 'undefined' ? privateKey.trim() : '';
+          const currentTokens = JSON.parse(localStorage.getItem('deployed_tokens') || '[]');
+          if (!currentTokens.find(t => t.ca.toLowerCase() === skipHolderCA.toLowerCase() && t.privateKey === pk && (!t.network || t.network === scanNetwork))) {
+            const newToken = {
+              name: tName,
+              symbol: sym,
+              ca: skipHolderCA,
+              network: scanNetwork,
+              privateKey: pk
+            };
+            currentTokens.push(newToken);
+            localStorage.setItem('deployed_tokens', JSON.stringify(currentTokens));
+            if (typeof setDeployedTokens === 'function') {
+              setDeployedTokens(currentTokens);
+            }
+          }
+        }
       } catch (err) {
         if (active) setSkipHolderSymbol('? (Gagal/Bukan Token)');
       }
     };
     fetchSymbol();
     return () => { active = false; };
-  }, [skipHolderCA, scanNetwork]);
+  }, [skipHolderCA, scanNetwork, privateKey]);
 
   const handlePrivateKeyChange = (val) => {
     setPrivateKey(val);
@@ -855,7 +879,6 @@ export default function AirdropPage() {
                               setIsDropdownOpen(false);
                             }}>
                               <span style={{ fontWeight: 'bold', color: 'white', fontSize: '0.9rem' }}>{token.name} <span style={{ color: '#94a3b8' }}>({token.symbol})</span></span>
-                              <span style={{ color: '#00d180', fontFamily: 'monospace', fontSize: '0.8rem' }}>{token.ca.substring(0, 6)}...{token.ca.substring(38)}</span>
                             </div>
                           </div>
                         ))}
