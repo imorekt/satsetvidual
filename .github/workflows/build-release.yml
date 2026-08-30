@@ -1,0 +1,43 @@
+name: Build and Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v1.0, v1.0.1, etc.
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        working-directory: ./web
+        run: npm install
+
+      - name: Update package.json version based on tag
+        working-directory: ./web
+        run: |
+          $TAG_VERSION = "${{ github.ref_name }}".TrimStart('v')
+          npm version $TAG_VERSION --no-git-tag-version
+        shell: pwsh
+
+      - name: Build Next.js App
+        working-directory: ./web
+        run: npm run build
+
+      - name: Build Electron App
+        working-directory: ./web
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --publish always

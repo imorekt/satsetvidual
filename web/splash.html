@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booting SATSET VIDUAL...</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #05070c;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            /* Make it unselectable and non-draggable */
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        #progressBarFill {
+            transition: width 0.1s linear;
+        }
+        
+        .pulse-text {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; text-shadow: 0 0 8px rgba(96, 165, 250, 0.6); }
+            100% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="glow" cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stop-color="#1a2a4a" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#05070d" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="barFill" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#2563eb"/>
+          <stop offset="100%" stop-color="#60a5fa"/>
+        </linearGradient>
+        <linearGradient id="curve" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0b1a3a" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#020409" stop-opacity="0.95"/>
+        </linearGradient>
+      </defs>
+
+      <rect width="1920" height="1080" fill="#05070c"/>
+      <rect width="1920" height="1080" fill="url(#glow)"/>
+
+      <path d="M0,1080 C 480,880 1440,880 1920,1080 L1920,1080 L0,1080 Z" fill="url(#curve)"/>
+
+      <g transform="translate(960,400)">
+        <rect x="-64" y="-64" width="128" height="128" rx="28" fill="none" stroke="#3b82f6" stroke-width="4"/>
+        <path d="M-64,-32 L0,-64 L64,-32 L64,32 L0,64 L-64,32 Z" fill="none" stroke="#60a5fa" stroke-width="3.5"/>
+        <line x1="0" y1="-64" x2="0" y2="0" stroke="#60a5fa" stroke-width="3"/>
+        <line x1="0" y1="0" x2="-64" y2="-32" stroke="#60a5fa" stroke-width="3"/>
+        <line x1="0" y1="0" x2="64" y2="-32" stroke="#60a5fa" stroke-width="3"/>
+        <line x1="0" y1="0" x2="0" y2="64" stroke="#60a5fa" stroke-width="3"/>
+      </g>
+
+      <text x="960" y="560" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif" font-weight="700" font-size="64" fill="#ffffff">SATSET<tspan dx="14" fill="#3b82f6">Vidual</tspan></text>
+
+      <text x="960" y="608" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif" font-weight="400" font-size="22" letter-spacing="0.5" fill="#9aa4b2">Smart Trading Automation</text>
+
+      <g transform="translate(760,700)">
+        <rect x="0" y="0" width="400" height="6" rx="3" fill="#1a2232"/>
+        <!-- Animatible progress bar rect (max width is 400) -->
+        <rect id="progressBarFill" x="0" y="0" width="0" height="6" rx="3" fill="url(#barFill)"/>
+      </g>
+
+      <text class="pulse-text" x="960" y="742" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif" font-size="16" fill="#6b7688">Memuat modul trading...</text>
+
+      <text id="app-version" x="1880" y="1040" text-anchor="end" font-family="Liberation Sans, Arial, sans-serif" font-weight="600" font-size="18" fill="#4b5563">v...</text>
+
+    </svg>
+
+    <script>
+        const progressBarFill = document.getElementById('progressBarFill');
+        
+        // The full width of the progress bar in the SVG is 400
+        const maxWidth = 400;
+        let currentWidth = 0;
+        
+        // Mempercepat animasi menjadi 4 detik agar tidak membuat user bosan
+        let startTime = null;
+        
+        const totalLoadingTimeMs = 4000;
+        
+        function animateProgressBar(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const elapsed = timestamp - startTime;
+            
+            // Update the width based on elapsed time (maxes out at maxWidth)
+            currentWidth = Math.min(maxWidth, (elapsed / totalLoadingTimeMs) * maxWidth);
+            progressBarFill.setAttribute('width', currentWidth);
+            
+            if (elapsed < totalLoadingTimeMs) {
+                requestAnimationFrame(animateProgressBar);
+            }
+        }
+        
+        // Start animation immediately
+        requestAnimationFrame(animateProgressBar);
+        
+        // Update version from URL hash passed by main.js
+        if (window.location.hash && window.location.hash.length > 1) {
+            document.getElementById('app-version').textContent = 'v' + window.location.hash.substring(1);
+        }
+    </script>
+</body>
+</html>

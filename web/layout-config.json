@@ -1,0 +1,10 @@
+{
+  "screenerV2": {
+    "rightColumnWidth": 380,
+    "labels": {
+      "autoSellSetup": "AUTO SELL SETUP",
+      "profilSetup": "PROFIL SETUP",
+      "logTerminal": "LOG TERMINAL"
+    }
+  }
+}

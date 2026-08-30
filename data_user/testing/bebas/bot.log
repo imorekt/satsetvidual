@@ -1,0 +1,25 @@
+[2026-07-22 20:03:20] ✅ Terhubung ke RPC: https://mainnet.base.org
+[2026-07-22 20:03:20] ✅ Dompet: 0x10b7614294cC0EE3a2E94f99339f0A88d620F53b
+
+[2026-07-22 20:03:21] 📍 Pool V4 PoolId: 0x1ab15fdc25...55ba0b0a
+
+[2026-07-22 20:03:21] ════════════════════════════════════════════════════════════
+[2026-07-22 20:03:21]   🤖  BASE AUTO-SELL TOKEN BOT
+[2026-07-22 20:03:21] ════════════════════════════════════════════════════════════
+[2026-07-22 20:03:21]   Token   : tes (tes)
+[2026-07-22 20:03:21]   Wallet  : 0x10b761...20F53b
+[2026-07-22 20:03:21]   ETH Bal : 0.002670 ETH
+[2026-07-22 20:03:21]   Saldo   : 4,999,216.601567 tes
+[2026-07-22 20:03:21]   DEX     : Uniswap V4
+[2026-07-22 20:03:21]   Pool    : 0x1ab15fdc25...55ba0b0a
+[2026-07-22 20:03:21]   Jual    : 98% dari pembelian
+[2026-07-22 20:03:21]   Slippage: 2.5%  |  Poll: 1.0s
+[2026-07-22 20:03:21] ────────────────────────────────────────────────────────────
+[2026-07-22 20:03:21] ✅ Token sudah memiliki allowance.
+[2026-07-22 20:03:22] 🔄 Mengirim transaksi persetujuan (Approve) Permit2 untuk Universal Router...
+[2026-07-22 20:03:22] 💸 Approve Permit2 ke UR dikirim! Hash: 0x39f983db...2865a7
+[2026-07-22 20:03:22] ✅ Token ini sudah memiliki izin Permit2 (Universal Router).
+[2026-07-22 20:03:22] Memantau dari blok 48,968,028... (STOP untuk berhenti)
+
+[2026-07-22 20:05:05] 📡 Memantau Blok: 48,968,080 | Total sell: 0 .. 
+[2026-07-22 20:05:06] 🛑 Bot dihentikan secara manual.

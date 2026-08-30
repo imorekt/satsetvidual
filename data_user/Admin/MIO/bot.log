@@ -1,0 +1,24 @@
+[2026-08-25 13:14:03] ✅ Terhubung ke RPC: https://mainnet.base.org
+[2026-08-25 13:14:03] ✅ Dompet: 0x4b7CDA9204C30B35ee0dA641CB10bcC7A506baA1
+
+[2026-08-25 13:14:03] 📍 Pool V4 PoolId: 0xc6eb89cc6b...731042f4
+
+[2026-08-25 13:14:03] ════════════════════════════════════════════════════════════
+[2026-08-25 13:14:03]   🤖  BASE AUTO-SELL TOKEN BOT
+[2026-08-25 13:14:03] ════════════════════════════════════════════════════════════
+[2026-08-25 13:14:03]   Token   : $MIO (Magic Internet Oil)
+[2026-08-25 13:14:03]   Wallet  : 0x4b7CDA...06baA1
+[2026-08-25 13:14:03]   ETH Bal : 0.005648 ETH
+[2026-08-25 13:14:03]   Saldo   : 0.00 $MIO
+[2026-08-25 13:14:03]   DEX     : Uniswap V4
+[2026-08-25 13:14:03]   Pool    : 0xc6eb89cc6b...731042f4
+[2026-08-25 13:14:03]   Jual    : 98% dari pembelian
+[2026-08-25 13:14:03]   Slippage: 2.5%  |  Poll: 1.0s
+[2026-08-25 13:14:03] ────────────────────────────────────────────────────────────
+[2026-08-25 13:14:12] ✅ Token sudah memiliki allowance.
+[2026-08-25 13:14:12] 🔄 Mengirim transaksi persetujuan (Approve) Permit2 untuk Universal Router...
+[2026-08-25 13:14:12] 💸 Approve Permit2 ke UR dikirim! Hash: 0x97d588a5...bdaed2
+[2026-08-25 13:14:12] ✅ Token ini sudah memiliki izin Permit2 (Universal Router).
+[2026-08-25 13:14:12] Memantau dari blok 50,424,552... (STOP untuk berhenti)
+
+[2026-08-25 13:14:12] 🛑 Bot dihentikan secara manual.

@@ -1,0 +1,39 @@
+[2026-07-22 20:05:16] ✅ Terhubung ke RPC: https://mainnet.base.org
+[2026-07-22 20:05:16] ✅ Dompet: 0x10b7614294cC0EE3a2E94f99339f0A88d620F53b
+
+[2026-07-22 20:05:17] 📍 Pool V4 PoolId: 0x1ab15fdc25...55ba0b0a
+
+[2026-07-22 20:05:17] ════════════════════════════════════════════════════════════
+[2026-07-22 20:05:17]   🤖  BASE AUTO-SELL TOKEN BOT
+[2026-07-22 20:05:17] ════════════════════════════════════════════════════════════
+[2026-07-22 20:05:17]   Token   : tes (tes)
+[2026-07-22 20:05:17]   Wallet  : 0x10b761...20F53b
+[2026-07-22 20:05:17]   ETH Bal : 0.002670 ETH
+[2026-07-22 20:05:17]   Saldo   : 4,999,216.601567 tes
+[2026-07-22 20:05:17]   DEX     : Uniswap V4
+[2026-07-22 20:05:17]   Pool    : 0x1ab15fdc25...55ba0b0a
+[2026-07-22 20:05:17]   Jual    : 50% dari pembelian
+[2026-07-22 20:05:17]   Slippage: 2.5%  |  Poll: 1.0s
+[2026-07-22 20:05:17] ────────────────────────────────────────────────────────────
+[2026-07-22 20:05:17] ✅ Token sudah memiliki allowance.
+[2026-07-22 20:05:17] 🔄 Mengirim transaksi persetujuan (Approve) Permit2 untuk Universal Router...
+[2026-07-22 20:05:17] 💸 Approve Permit2 ke UR dikirim! Hash: 0x2f31c87d...6f98ae
+[2026-07-22 20:05:17] ✅ Token ini sudah memiliki izin Permit2 (Universal Router).
+[2026-07-22 20:05:17] Memantau dari blok 48,968,086... (STOP untuk berhenti)
+
+[2026-07-22 20:05:48] 📡 Memantau Blok: 48,968,101 | Total sell: 0 .  
+
+[2026-07-22 20:05:48] 🔥 BUY TERDETEKSI tx: 0x7609836c...
+[2026-07-22 20:05:48]    Dibeli : 199.758134 tes (0.00005216 ETH)
+[2026-07-22 20:05:49]    Estimasi Pembelian : ~$0.1000 USD
+[2026-07-22 20:05:50]    Saldo   : 4999216.601567 tes
+[2026-07-22 20:05:50]    Jual    : 99.879067 tes (50% dari buy  ≈$0.0500 USD)
+[2026-07-22 20:05:50]    Kirim transaksi...
+[2026-07-22 20:06:01] 🛒 Mempersiapkan penjualan 99.879067 tes (0.0019978943712604157% dari total saldo)...
+[2026-07-22 20:06:02] 🚀 Mengirim transaksi swap...
+[2026-07-22 20:06:03] 💸 Transaksi swap dikirim! Hash: 0xc0a198a77e36d0f2e75611853730d78fdbb7b2253477e9b94cd2cda98f1dc376
+[2026-07-22 20:06:03] ⏳ Menunggu konfirmasi...
+[2026-07-22 20:06:03] 🎉 SUKSES! Berhasil menjual 99.879067 tes.
+[2026-07-22 20:06:03]     ✅ SUKSES sell #1  ≈$0.0500 dari buy ≈$0.1000
+
+[2026-07-22 20:13:50] 📡 Memantau Blok: 48,968,342 | Total sell: 1 .. 

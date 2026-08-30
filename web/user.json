@@ -1,0 +1,26 @@
+[
+  {
+    "name": "kangrekt",
+    "walletAddress": "dhimzjtr1@gmail.com",
+    "password": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f",
+    "firstLogin": "2026-08-14T12:47:06.912Z",
+    "lastLogin": "2026-08-16T05:42:59.245Z",
+    "role": "Premium"
+  },
+  {
+    "name": "Admin",
+    "walletAddress": "admin",
+    "password": "fbcf2c6795707818e858f41078b4bea121022408af048e5e505f9199637de789",
+    "firstLogin": "2026-08-16T04:02:11.626Z",
+    "lastLogin": "2026-08-26T01:23:51.751Z",
+    "role": "Developer"
+  },
+  {
+    "name": "adalah",
+    "walletAddress": "dhim.zjtr1@gmail.com",
+    "password": "9260f889a03c3de5a806b802afdcca308513328a90c44988955d8dc13dd93504",
+    "firstLogin": "2026-08-25T06:57:48.425Z",
+    "lastLogin": "2026-08-25T06:57:55.902Z",
+    "role": "Premium"
+  }
+]

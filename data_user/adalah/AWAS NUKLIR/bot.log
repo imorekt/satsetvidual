@@ -1,0 +1,26 @@
+[2026-08-25 18:12:14] ✅ Terhubung ke RPC: https://mainnet.base.org
+[2026-08-25 18:12:14] ✅ Dompet: 0xb746c026656Ae2910F85CBdb607C739b04A8108c
+
+[2026-08-25 18:12:14] 📍 Pool V4 PoolId: 0xf731a4d585...de2ce524
+
+[2026-08-25 18:12:14] ════════════════════════════════════════════════════════════
+[2026-08-25 18:12:14]   🤖  BASE AUTO-SELL TOKEN BOT
+[2026-08-25 18:12:14] ════════════════════════════════════════════════════════════
+[2026-08-25 18:12:14]   Token   : NUKLIR (AWAS NUKLIR)
+[2026-08-25 18:12:14]   Wallet  : 0xb746c0...A8108c
+[2026-08-25 18:12:14]   ETH Bal : 0.000086 ETH
+[2026-08-25 18:12:14]   Saldo   : 250,000,601.910043 NUKLIR
+[2026-08-25 18:12:14]   DEX     : Uniswap V4
+[2026-08-25 18:12:14]   Pool    : 0xf731a4d585...de2ce524
+[2026-08-25 18:12:14]   Jual    : 100% dari pembelian
+[2026-08-25 18:12:14]   Slippage: 30%  |  Poll: 1.0s
+[2026-08-25 18:12:14] ────────────────────────────────────────────────────────────
+[2026-08-25 18:12:15] ⏳ Melakukan approve token ke Router...
+[2026-08-25 18:12:21] ✅ Token berhasil di-approve!
+[2026-08-25 18:12:21] 🔄 Mengirim transaksi persetujuan (Approve) Permit2 untuk Universal Router...
+[2026-08-25 18:12:21] 💸 Approve Permit2 ke UR dikirim! Hash: 0x285db281...2bf302
+[2026-08-25 18:12:21] ✅ Token ini sudah memiliki izin Permit2 (Universal Router).
+[2026-08-25 18:12:21] Memantau dari blok 50,433,497... (STOP untuk berhenti)
+
+[2026-08-25 18:12:57] 📡 Memantau Blok: 50,433,515 | Total sell: 0 .  
+[2026-08-25 18:12:58] 🛑 Bot dihentikan secara manual.

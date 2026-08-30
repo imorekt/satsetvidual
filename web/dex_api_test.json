@@ -1,0 +1,56 @@
+{
+  "chainId": "soneium",
+  "dexId": "velodrome",
+  "url": "https://dexscreener.com/soneium/0x5441c4c5cc00d33bd9409f742d511ee01db1667b",
+  "pairAddress": "0x5441c4c5cc00D33bd9409F742D511Ee01db1667B",
+  "baseToken": {
+    "address": "0x4200000000000000000000000000000000000006",
+    "name": "Wrapped Ether",
+    "symbol": "WETH"
+  },
+  "quoteToken": {
+    "address": "0xbA9986D2381edf1DA03B0B9c1f8b00dc4AacC369",
+    "name": "Bridged USDC (Soneium)",
+    "symbol": "USDC.e"
+  },
+  "priceNative": "1907.6256",
+  "priceUsd": "1907.62",
+  "txns": {
+    "m5": {
+      "buys": 4,
+      "sells": 41
+    },
+    "h1": {
+      "buys": 87,
+      "sells": 204
+    },
+    "h6": {
+      "buys": 1232,
+      "sells": 1881
+    },
+    "h24": {
+      "buys": 3373,
+      "sells": 5488
+    }
+  },
+  "volume": {
+    "h24": 115561.8,
+    "h6": 39286.16,
+    "h1": 3436.51,
+    "m5": 851.52
+  },
+  "priceChange": {
+    "m5": 0.16,
+    "h1": 0.81,
+    "h6": 1.63,
+    "h24": 2.61
+  },
+  "liquidity": {
+    "usd": 42622.33,
+    "base": 11.6279,
+    "quote": 20440
+  },
+  "fdv": 2175913,
+  "marketCap": 239082719,
+  "pairCreatedAt": 1736867703000
+}
