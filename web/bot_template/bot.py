@@ -1300,17 +1300,17 @@ class BaseAutoSellBot:
                                 a1 = int.from_bytes(data_bytes[32:64], byteorder="big", signed=True)
                                 
                                 # ── PERUBAHAN TANDA UNISWAP V4 ──
-                                # Di V4, event Swap menggunakan tipe BalanceDelta. 
-                                # Positif (+) = User Menerima dari Pool
-                                # Negatif (-) = User Membayar ke Pool
+                                # Di V4, event Swap mencatat delta saldo dari sudut pandang POOL:
+                                # Positif (+) = Pool Menerima (User Membayar ke Pool)
+                                # Negatif (-) = Pool Mengeluarkan (User Menerima dari Pool)
                                 if is_token0_weth:
-                                    # WETH (token0) dibayar (a0 < 0), Token (token1) diterima (a1 > 0) -> INI ADALAH BUY
-                                    if a0 < 0 and a1 > 0:
-                                        is_buy, weth_amount, token_amount = True, abs(a0), a1
+                                    # WETH (token0) masuk ke pool (a0 > 0), Token (token1) keluar ke user (a1 < 0) -> BUY
+                                    if a0 > 0 and a1 < 0:
+                                        is_buy, weth_amount, token_amount = True, a0, abs(a1)
                                 else:
-                                    # WETH (token1) dibayar (a1 < 0), Token (token0) diterima (a0 > 0) -> INI ADALAH BUY
-                                    if a1 < 0 and a0 > 0:
-                                        is_buy, weth_amount, token_amount = True, abs(a1), a0
+                                    # WETH (token1) masuk ke pool (a1 > 0), Token (token0) keluar ke user (a0 < 0) -> BUY
+                                    if a1 > 0 and a0 < 0:
+                                        is_buy, weth_amount, token_amount = True, a1, abs(a0)
 
                             elif sig == SIG_V3:
                                 if len(data_bytes) < 64:

@@ -543,18 +543,20 @@ export class BaseAutoSellBot {
                   const a0 = ethers.fromTwos(ethers.dataSlice(log.data, 0, 32), 256);
                   const a1 = ethers.fromTwos(ethers.dataSlice(log.data, 32, 64), 256);
                   
-                  // In V4: positive means user receives from pool, negative means user pays to pool
+                  // In Uniswap V4: positive delta means pool receives (user pays), negative means pool sends (user receives)
                   if (isToken0Weth) {
-                    if (a0 < 0n && a1 > 0n) {
+                    // WETH (token0) masuk ke pool (a0 > 0), Token (token1) keluar ke user (a1 < 0) -> BUY
+                    if (a0 > 0n && a1 < 0n) {
                       isBuy = true;
-                      wethAmount = a0 < 0n ? -a0 : a0;
-                      tokenAmount = a1;
+                      wethAmount = a0;
+                      tokenAmount = a1 < 0n ? -a1 : a1;
                     }
                   } else {
-                    if (a1 < 0n && a0 > 0n) {
+                    // WETH (token1) masuk ke pool (a1 > 0), Token (token0) keluar ke user (a0 < 0) -> BUY
+                    if (a1 > 0n && a0 < 0n) {
                       isBuy = true;
-                      wethAmount = a1 < 0n ? -a1 : a1;
-                      tokenAmount = a0;
+                      wethAmount = a1;
+                      tokenAmount = a0 < 0n ? -a0 : a0;
                     }
                   }
                 } else if (sig === SIG_V3.toLowerCase()) {
