@@ -9,8 +9,8 @@ const RPC_CONFIG = {
 const HOOKS = "0x0000000000000000000000000000000000000000";
 const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-// Router Uniswap V4 yang benar (Universal Router Base)
-const ROUTER_BASE = "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD";
+// Router Uniswap V4 yang benar (Universal Router Base V4)
+const ROUTER_BASE = "0xFdf682F51FE81Aa4898F0AE2163d8A55c127fbC7";
 const ROUTER_ROBINHOOD = "0x8876789976dEcBfCbBbe364623C63652db8C0904";
 
 export async function POST(request) {

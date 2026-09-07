@@ -21,8 +21,8 @@ export const DEX_CONFIG = {
   },
   uniswap_v4: {
     name: "Uniswap V4",
-    router: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD", // Official Base Universal Router
-    factory: "0x498581fF718922c3f8e6A244956aF099B2652b2b" // PoolManager actually, but putting it here for config consistency
+    router: "0xFdf682F51FE81Aa4898F0AE2163d8A55c127fbC7", // Official Base Uniswap V4 Universal Router
+    factory: "0x498581fF718922c3f8e6A244956aF099B2652b2b" // PoolManager
   }
 };
 

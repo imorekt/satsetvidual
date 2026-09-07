@@ -149,16 +149,53 @@ export class BaseAutoSellBot {
 
   async preApproveToken() {
     try {
-      const routerAddress = DEX_CONFIG[this.dexChoice].router;
-      const allowance = await this.tokenContract.allowance(this.wallet.address, routerAddress);
-      
-      if (allowance === 0n) { 
-        this.log("⏳ Melakukan approve token ke Router...");
-        const tx = await this.tokenContract.approve(routerAddress, ethers.MaxUint256);
-        await tx.wait();
-        this.log("✅ Token berhasil di-approve!");
+      const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+      const PERMIT2_ABI = [
+        "function approve(address token, address spender, uint160 amount, uint48 expiration) external",
+        "function allowance(address user, address token, address spender) view returns (uint160 amount, uint48 expiration, uint48 nonce)"
+      ];
+
+      if (this.dexChoice === "uniswap_v4") {
+        const routerAddress = DEX_CONFIG["uniswap_v4"].router;
+        
+        // 1. Cek & Approve ERC-20 Token ke Permit2
+        const p2Allowance = await this.tokenContract.allowance(this.wallet.address, PERMIT2_ADDRESS);
+        if (p2Allowance < ethers.MaxUint256 / 2n) {
+          this.log("⏳ Melakukan approve token ke Permit2...");
+          const tx1 = await this.tokenContract.approve(PERMIT2_ADDRESS, ethers.MaxUint256);
+          await tx1.wait();
+          this.log(`✅ Token berhasil di-approve ke Permit2! (Tx: ${tx1.hash})`);
+        } else {
+          this.log("✅ Token sudah memiliki allowance ke Permit2.");
+        }
+
+        // 2. Cek & Approve Permit2 ke Universal Router V4
+        const permit2Contract = new ethers.Contract(PERMIT2_ADDRESS, PERMIT2_ABI, this.wallet);
+        const [p2Amt, p2Exp] = await permit2Contract.allowance(this.wallet.address, this.tokenCa, routerAddress);
+        const nowTs = Math.floor(Date.now() / 1000);
+        
+        if (p2Amt < 1000000000000000000n || p2Exp < nowTs + 86400) {
+          this.log("🔄 Mengirim transaksi persetujuan (Approve) Permit2 untuk Universal Router V4...");
+          const maxUint160 = 2n**160n - 1n;
+          const maxUint48 = 2n**48n - 1n; // Never expires
+          const tx2 = await permit2Contract.approve(this.tokenCa, routerAddress, maxUint160, maxUint48);
+          await tx2.wait();
+          this.log(`✅ Token berhasil di-approve Permit2 ke Universal Router V4! (Tx: ${tx2.hash})`);
+        } else {
+          this.log("✅ Token sudah memiliki izin Permit2 (Universal Router V4).");
+        }
       } else {
-        this.log("✅ Token sudah memiliki allowance.");
+        const routerAddress = DEX_CONFIG[this.dexChoice].router;
+        const allowance = await this.tokenContract.allowance(this.wallet.address, routerAddress);
+        
+        if (allowance < ethers.MaxUint256 / 2n) { 
+          this.log(`⏳ Melakukan approve token ke Router (${DEX_CONFIG[this.dexChoice].name})...`);
+          const tx = await this.tokenContract.approve(routerAddress, ethers.MaxUint256);
+          await tx.wait();
+          this.log(`✅ Token berhasil di-approve! (Tx: ${tx.hash})`);
+        } else {
+          this.log("✅ Token sudah memiliki allowance.");
+        }
       }
     } catch (err) {
       this.errorLog(`Gagal approve token: ${err.message}`);
@@ -393,12 +430,6 @@ export class BaseAutoSellBot {
 
     await this.preApproveToken();
     const startBlock = await this.provider.getBlockNumber();
-    
-    if (this.dexChoice === "uniswap_v4" || this.dexChoice === "aerodrome") {
-      this.log("🔄 Mengirim transaksi persetujuan (Approve) Permit2 untuk Universal Router...");
-      this.log("💸 Approve Permit2 ke UR dikirim! Hash: " + "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 8));
-      this.log(`✅ Token ${this.tokenCa ? 'ini' : 'tes'} sudah memiliki izin Permit2 (Universal Router).`);
-    }
 
     this.log(`Memantau dari blok ${startBlock.toLocaleString('en-US')}... (STOP untuk berhenti)`);
     this.log("");

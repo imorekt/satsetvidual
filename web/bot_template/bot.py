@@ -72,7 +72,7 @@ DEX_CONFIG = {
     },
     "uniswap_v4": {
         "name": "Uniswap V4",
-        "router": Web3.to_checksum_address("0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD"), # Universal Router
+        "router": Web3.to_checksum_address("0xFdf682F51FE81Aa4898F0AE2163d8A55c127fbC7"), # Uniswap V4 Universal Router di Base
         "factory": Web3.to_checksum_address("0x498581fF718922c3f8e6A244956aF099B2652b2b") # PoolManager
     }
 }
@@ -721,10 +721,10 @@ class BaseAutoSellBot:
             raise e
 
     def execute_swap_uniswap_v4(self, token_ca, amount_in, decimals, symbol, fee_tier):
-        """Eksekusi swap menggunakan Uniswap V4 Universal Router (0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD)"""
+        """Eksekusi swap menggunakan Uniswap V4 Universal Router (0xFdf682F51FE81Aa4898F0AE2163d8A55c127fbC7)"""
         from eth_abi import abi
         
-        router_address = Web3.to_checksum_address("0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD")
+        router_address = Web3.to_checksum_address("0xFdf682F51FE81Aa4898F0AE2163d8A55c127fbC7")
         
         ETH_ADDRESS = "0x0000000000000000000000000000000000000000"
         hooks = "0x0000000000000000000000000000000000000000"
