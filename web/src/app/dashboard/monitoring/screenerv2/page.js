@@ -1378,7 +1378,6 @@ export default function ScreenerV2() {
 
                             {/* ROW 2 */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                                <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'bold' }}>PROFIL:</span>
                                 <div className="select-wrapper" style={{ flex: 1 }}>
                                     <select className="setup-select" style={{ height: '32px', padding: '0 8px', width: '100%' }} value={selectedProfile} onChange={(e) => { setSelectedProfile(e.target.value); localStorage.setItem('activeProfile', e.target.value); }}>
                                         {filteredProfiles.length > 0 ? filteredProfiles.map(p => <option key={p} value={p} style={{ color: 'black' }}>{p}</option>) : <option value="" style={{ color: 'black' }}>(Kosong)</option>}
