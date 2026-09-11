@@ -16,11 +16,48 @@ autoUpdater.autoDownload = false; // Kita akan memanggil downloadUpdate() secara
 
 let mainWindow;
 let nextProcess;
+let pumpfunProcess;
 let nextLogs = '';
 let tray = null;
 let isQuitting = false;
 
 // getAvailablePort dihapus karena kita butuh port statis agar localStorage (sesi login) tidak hilang
+
+async function startPumpfunServer() {
+  const isDev = !app.isPackaged;
+  if (isDev) return;
+
+  const pumpfunDir = path.join(process.resourcesPath, 'pumpfun-agent');
+  const serverPath = path.join(pumpfunDir, 'dist', 'index.js');
+  const fs = require('fs');
+
+  if (fs.existsSync(serverPath)) {
+    try {
+      pumpfunProcess = spawn(process.execPath, [serverPath], {
+        cwd: pumpfunDir,
+        env: {
+          ...process.env,
+          ELECTRON_RUN_AS_NODE: '1',
+          PORT: '3005',
+          DRY_RUN_MODE: 'true',
+          IS_ELECTRON: 'true'
+        }
+      });
+      pumpfunProcess.stdout.on('data', (data) => {
+        log.info(`PumpFun: ${data}`);
+      });
+      pumpfunProcess.stderr.on('data', (data) => {
+        log.error(`PumpFun error: ${data}`);
+      });
+      pumpfunProcess.on('exit', (code) => {
+        log.info(`PumpFun process exited with code ${code}`);
+      });
+      log.info('Pumpfun Engine process spawned on port 3005');
+    } catch (err) {
+      log.error('Failed to spawn Pumpfun Engine:', err);
+    }
+  }
+}
 
 async function startNextServer(port) {
   const isDev = !app.isPackaged;
@@ -103,7 +140,8 @@ async function createWindow() {
   splashWindow.loadFile(path.join(__dirname, 'splash.html'), { hash: app.getVersion() });
   const splashStartTime = Date.now();
 
-  // 2. Siapkan Server Next.js di background dengan PORT TETAP agar sesi localStorage tidak hilang
+  // 2. Siapkan Server Next.js & PumpFun Engine di background
+  await startPumpfunServer();
   const actualPort = await startNextServer(39142);
 
   // 3. Buat Main Window tapi jangan ditampilkan dulu
@@ -278,7 +316,10 @@ if (!gotTheLock) {
 
   app.on('before-quit', () => {
     if (nextProcess) {
-      nextProcess.kill();
+      try { nextProcess.kill(); } catch (e) {}
+    }
+    if (pumpfunProcess) {
+      try { pumpfunProcess.kill(); } catch (e) {}
     }
   });
 }

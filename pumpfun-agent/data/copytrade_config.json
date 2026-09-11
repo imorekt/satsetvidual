@@ -1,0 +1,9 @@
+{
+  "isEnabled": true,
+  "copyDelayMs": 0,
+  "maxCopyAmountSol": 0.5,
+  "copyMode": "ALL",
+  "skipIfPositionExists": true,
+  "useCustomAmount": false,
+  "customAmountSol": 0.05
+}

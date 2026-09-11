@@ -21,6 +21,13 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install and Build Pumpfun Agent
+        working-directory: ./pumpfun-agent
+        run: |
+          npm install
+          npm --prefix client install
+          npm run build
+
       - name: Install Dependencies
         working-directory: ./web
         run: npm install

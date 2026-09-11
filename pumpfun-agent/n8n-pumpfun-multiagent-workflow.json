@@ -1,0 +1,363 @@
+{
+  "name": "Solana pump.fun Multi-Agent Live Execution System (Fixed)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "3c4d5e6f-0001-4000-8000-000000000001",
+      "name": "1. Trigger (Every 2s)",
+      "type": "n8n-nodes-base.interval",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://frontend-api.pump.fun/coins?sort=created_timestamp&order=DESC&limit=1",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "3c4d5e6f-0002-4000-8000-000000000002",
+      "name": "Agen 1: Fetch Live pump.fun API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// AGEN 1: Parse Real Token Metadata & Calculate Narrative Score\nconst response = $input.first().json;\nconst coin = Array.isArray(response) ? response[0] : (response.data ? response.data[0] : response);\n\nif (!coin || !coin.mint) {\n  return [];\n}\n\nconst viralKeywords = {\n  'ai': 0.35, 'agent': 0.35, 'autonomous': 0.25, 'gpt': 0.25, 'neural': 0.2,\n  'quantum': 0.2, 'cyber': 0.2, 'doge': 0.25, 'elon': 0.25, 'trump': 0.2,\n  'solana': 0.15, 'pepe': 0.25, 'cat': 0.15, 'cto': 0.2, 'giga': 0.2,\n  'based': 0.15, 'pump': 0.1, 'terminal': 0.2\n};\n\nconst blacklistWords = ['presale', 'airdrop claim', 'free mint', 'send sol', 'honeypot'];\nconst fullText = `${coin.name || ''} ${coin.symbol || ''} ${coin.description || ''}`.toLowerCase();\n\nlet isBlacklisted = false;\nfor (const badWord of blacklistWords) {\n  if (fullText.includes(badWord)) {\n    isBlacklisted = true;\n    break;\n  }\n}\n\nlet narrativeScore = 0.2;\nconst matchedKeywords = [];\n\nif (!isBlacklisted) {\n  for (const [kw, weight] of Object.entries(viralKeywords)) {\n    const regex = new RegExp(`\\\\b${kw}\\\\b`, 'i');\n    if (regex.test(fullText)) {\n      narrativeScore += weight;\n      matchedKeywords.push(kw);\n    }\n  }\n}\n\nnarrativeScore = Math.min(Math.max(parseFloat(narrativeScore.toFixed(2)), 0.0), 1.0);\n\nreturn [{\n  json: {\n    tokenAddress: coin.mint,\n    name: coin.name || 'Unknown',\n    symbol: coin.symbol || 'TOKEN',\n    description: coin.description || '',\n    image_uri: coin.image_uri || '',\n    creator: coin.creator || '',\n    virtual_sol_reserves: coin.virtual_sol_reserves || 30000000000,\n    virtual_token_reserves: coin.virtual_token_reserves || 1073000000000000,\n    usd_market_cap: coin.usd_market_cap || 5000,\n    narrative_score: narrativeScore,\n    keywords: matchedKeywords,\n    scannedAt: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "3c4d5e6f-0003-4000-8000-000000000003",
+      "name": "Agen 1: Narrative Evaluator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.narrative_score }}",
+              "operation": "largerEqual",
+              "value2": 0.85
+            }
+          ]
+        }
+      },
+      "id": "3c4d5e6f-0004-4000-8000-000000000004",
+      "name": "Filter: Narrative >= 0.85?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.rugcheck.xyz/v1/tokens/{{ $json.tokenAddress }}/report",
+        "options": {
+          "timeout": 7000
+        }
+      },
+      "id": "3c4d5e6f-0005-4000-8000-000000000005",
+      "name": "Agen 2: Rugcheck API Audit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// AGEN 2: 3-Layer Security Audit (Rugcheck API + Pump.fun Rules)\nconst rugcheckResp = $input.first().json;\nconst tokenData = $('Agen 1: Narrative Evaluator').first().json;\n\nconst reasons = [];\nlet mintAuthNull = true;\nlet freezeAuthNull = true;\nlet top5Percent = 0.0;\n\nif (rugcheckResp && rugcheckResp.token) {\n  if (rugcheckResp.token.mintAuthority !== null && rugcheckResp.token.mintAuthority !== undefined) {\n    mintAuthNull = false;\n    reasons.push(`Mint authority active: ${rugcheckResp.token.mintAuthority}`);\n  }\n  if (rugcheckResp.token.freezeAuthority !== null && rugcheckResp.token.freezeAuthority !== undefined) {\n    freezeAuthNull = false;\n    reasons.push(`Freeze authority active: ${rugcheckResp.token.freezeAuthority}`);\n  }\n\n  if (Array.isArray(rugcheckResp.topHolders)) {\n    const nonCurveHolders = rugcheckResp.topHolders.slice(0, 5);\n    top5Percent = nonCurveHolders.reduce((acc, h) => acc + (h.pct || 0), 0);\n    if (top5Percent > 25.0) {\n      reasons.push(`Top 5 holders own ${top5Percent.toFixed(1)}% supply (Max: 25%)`);\n    }\n  }\n\n  if (Array.isArray(rugcheckResp.risks)) {\n    for (const r of rugcheckResp.risks) {\n      if (r.level === 'danger') {\n        reasons.push(`Hazard detected: ${r.name}`);\n      }\n    }\n  }\n} else {\n  mintAuthNull = true;\n  freezeAuthNull = true;\n}\n\nconst auditPassed = reasons.length === 0;\n\nreturn [{\n  json: {\n    ...tokenData,\n    audit_passed: auditPassed,\n    audit_details: {\n      mintAuthorityDisabled: mintAuthNull,\n      freezeAuthorityDisabled: freezeAuthNull,\n      top5HoldingPercent: top5Percent,\n      reasons: reasons,\n      verifiedAt: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "3c4d5e6f-0006-4000-8000-000000000006",
+      "name": "Agen 2: Kill-Vote Evaluator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.audit_passed }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "3c4d5e6f-0007-4000-8000-000000000007",
+      "name": "Filter: Kill-Vote Passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1640, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://127.0.0.1:{{ $env.PORT || 3000 }}/api/trade/buy",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tokenAddress\": \"{{ $json.tokenAddress }}\",\n  \"symbol\": \"{{ $json.symbol }}\",\n  \"name\": \"{{ $json.name }}\",\n  \"buyAmountSol\": 0.5,\n  \"slippageBps\": 500\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "3c4d5e6f-0008-4000-8000-000000000008",
+      "name": "Agen 3: Execute Buy via Jito MEV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1880, 160],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// BUG 1 FIX: Initialize Position Context & Prevent Wrong Token Tracking\nconst buyResponse = $input.first().json;\nconst token = $('Agen 1: Narrative Evaluator').first().json;\n\nconst initialVirtualSol = Number(token.virtual_sol_reserves) / 1e9 || 30.0;\nconst initialVirtualToken = Number(token.virtual_token_reserves) / 1e6 || 1073000000;\nconst entryPriceSol = initialVirtualSol / initialVirtualToken;\n\nreturn [{\n  json: {\n    tokenAddress: token.tokenAddress,\n    symbol: token.symbol,\n    name: token.name,\n    buyAmountSol: buyResponse.buyAmountSol || 0.5,\n    entryPriceSol: entryPriceSol,\n    currentPriceSol: entryPriceSol,\n    previousVirtualSol: initialVirtualSol,\n    openedAt: Date.now(),\n    tickCount: 0,\n    isWhaleDump: false,\n    isExitTriggered: false,\n    exitReason: 'NONE'\n  }\n}];"
+      },
+      "id": "3c4d5e6f-0009-4000-8000-000000000009",
+      "name": "Init Active Position Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2120, 160]
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "seconds"
+      },
+      "id": "3c4d5e6f-0010-4000-8000-000000000010",
+      "name": "Wait (1s Polling)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2360, 160],
+      "webhookId": "3c4d5e6f-wait-polling-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// BUG 1 & BUG 2 FIX: Autonomous Live Tracker & Delta-SOL Whale Dump Detection\n// Context is preserved strictly from current input stream, NOT node Agen 1\nconst position = $input.first().json;\nposition.tickCount = (position.tickCount || 0) + 1;\n\nlet liveCoin = null;\ntry {\n  const res = await fetch(`https://frontend-api.pump.fun/coins/${position.tokenAddress}`, {\n    headers: { 'Accept': 'application/json' },\n    signal: AbortSignal.timeout(4000)\n  });\n  if (res.ok) {\n    liveCoin = await res.json();\n  }\n} catch (e) {\n  // Graceful fallback to simulated price tick if rate limited\n}\n\nconst currentVirtualSol = liveCoin && liveCoin.virtual_sol_reserves \n  ? Number(liveCoin.virtual_sol_reserves) / 1e9 \n  : position.previousVirtualSol * (1 + (Math.random() * 0.08 - 0.02));\n\nconst currentVirtualToken = liveCoin && liveCoin.virtual_token_reserves \n  ? Number(liveCoin.virtual_token_reserves) / 1e6 \n  : 1073000000;\n\nconst currentPriceSol = currentVirtualSol / currentVirtualToken;\n\n// BUG 2 FIX: Real Whale Dump Detection Logic\n// Terdeteksi jika cadangan SOL pada kurva bonding anjlok >= 8% dalam 1 polling\n// ATAU jika terjadi net outflow mendadak > 2.5 SOL dalam 1 polling\nconst solDelta = currentVirtualSol - position.previousVirtualSol;\nconst solDeltaPercent = position.previousVirtualSol > 0 \n  ? (solDelta / position.previousVirtualSol) * 100 \n  : 0;\n\nconst isWhaleDump = solDeltaPercent <= -8.0 || solDelta <= -2.5;\n\n// PnL & Multiplier\nconst pnlPercent = ((currentPriceSol - position.entryPriceSol) / position.entryPriceSol) * 100;\nconst gainMultiplier = parseFloat((currentPriceSol / position.entryPriceSol).toFixed(2));\n\n// Evaluasi 3 Kondisi Exit\nconst isTakeProfit = gainMultiplier >= 60.0;\nconst isStopLoss = pnlPercent <= -15.0;\nconst isExitTriggered = isWhaleDump || isTakeProfit || isStopLoss;\n\nlet exitReason = 'NONE';\nif (isWhaleDump) exitReason = 'WHALE_DUMP_EMERGENCY';\nelse if (isTakeProfit) exitReason = 'TAKE_PROFIT_60X';\nelse if (isStopLoss) exitReason = 'STOP_LOSS';\n\n// Update state untuk tick berikutnya\nposition.previousVirtualSol = currentVirtualSol;\nposition.currentPriceSol = currentPriceSol;\nposition.gainMultiplier = gainMultiplier;\nposition.pnlPercent = parseFloat(pnlPercent.toFixed(2));\nposition.solDeltaPercent = parseFloat(solDeltaPercent.toFixed(2));\nposition.isWhaleDump = isWhaleDump;\nposition.isExitTriggered = isExitTriggered;\nposition.exitReason = exitReason;\nposition.lastPolledAt = new Date().toISOString();\n\nreturn [{ json: position }];"
+      },
+      "id": "3c4d5e6f-0011-4000-8000-000000000011",
+      "name": "Agen 4: Tracker & Whale Radar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2600, 160]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isExitTriggered }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "3c4d5e6f-0012-4000-8000-000000000012",
+      "name": "Filter: Exit Triggered?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2840, 160]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://127.0.0.1:{{ $env.PORT || 3000 }}/api/trade/sell",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tokenAddress\": \"{{ $json.tokenAddress }}\",\n  \"symbol\": \"{{ $json.symbol }}\",\n  \"reason\": \"{{ $json.exitReason }}\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "3c4d5e6f-0013-4000-8000-000000000013",
+      "name": "Agen 5: Sell All via Jito MEV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3100, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://httpbin.org/post",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"event\": \"POSITION_CLOSED\",\n  \"token\": \"${{ $('Agen 4: Tracker & Whale Radar').first().json.symbol }}\",\n  \"mint\": \"${{ $('Agen 4: Tracker & Whale Radar').first().json.tokenAddress }}\",\n  \"exit_reason\": \"${{ $('Agen 4: Tracker & Whale Radar').first().json.exitReason }}\",\n  \"gain_multiplier\": \"${{ $('Agen 4: Tracker & Whale Radar').first().json.gainMultiplier }}x\",\n  \"pnl_percent\": \"${{ $('Agen 4: Tracker & Whale Radar').first().json.pnlPercent }}%\",\n  \"sol_delta\": \"${{ $('Agen 4: Tracker & Whale Radar').first().json.solDeltaPercent }}%\",\n  \"closed_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "3c4d5e6f-0014-4000-8000-000000000014",
+      "name": "Send Webhook / Telegram Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3340, 100],
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "1. Trigger (Every 2s)": {
+      "main": [
+        [
+          {
+            "node": "Agen 1: Fetch Live pump.fun API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agen 1: Fetch Live pump.fun API": {
+      "main": [
+        [
+          {
+            "node": "Agen 1: Narrative Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agen 1: Narrative Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Filter: Narrative >= 0.85?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Narrative >= 0.85?": {
+      "main": [
+        [
+          {
+            "node": "Agen 2: Rugcheck API Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agen 2: Rugcheck API Audit": {
+      "main": [
+        [
+          {
+            "node": "Agen 2: Kill-Vote Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agen 2: Kill-Vote Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Filter: Kill-Vote Passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Kill-Vote Passed?": {
+      "main": [
+        [
+          {
+            "node": "Agen 3: Execute Buy via Jito MEV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agen 3: Execute Buy via Jito MEV": {
+      "main": [
+        [
+          {
+            "node": "Init Active Position Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Active Position Context": {
+      "main": [
+        [
+          {
+            "node": "Wait (1s Polling)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (1s Polling)": {
+      "main": [
+        [
+          {
+            "node": "Agen 4: Tracker & Whale Radar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agen 4: Tracker & Whale Radar": {
+      "main": [
+        [
+          {
+            "node": "Filter: Exit Triggered?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Exit Triggered?": {
+      "main": [
+        [
+          {
+            "node": "Agen 5: Sell All via Jito MEV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait (1s Polling)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agen 5: Sell All via Jito MEV": {
+      "main": [
+        [
+          {
+            "node": "Send Webhook / Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

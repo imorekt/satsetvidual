@@ -1,0 +1,51 @@
+{
+  "name": "pumpfun-multiagent-trading-bot",
+  "version": "1.0.0",
+  "description": "Production-grade 5-Agent Automated pump.fun Trading Bot on Solana with Jito MEV and Dry-Run Simulator",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && npm --prefix client run build",
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
+    "client:dev": "npm --prefix client run dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "solana",
+    "pumpfun",
+    "trading-bot",
+    "multi-agent",
+    "jito-mev",
+    "typescript"
+  ],
+  "author": "Antigravity Agent",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "axios": "^1.7.9",
+    "bs58": "^5.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "framer-motion": "^13.2.0",
+    "lucide-react": "^1.43.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "recharts": "^3.10.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "winston": "^3.17.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.13.1",
+    "@types/ws": "^8.5.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
