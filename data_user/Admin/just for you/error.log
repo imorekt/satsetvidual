@@ -1,0 +1,8 @@
+[2026-09-09 16:25:25] ERROR: Gagal mengambil getLogs: request timeout (code=TIMEOUT, version=6.17.0)
+[2026-09-09 16:25:25] ERROR: Koneksi RPC terputus (request timeout (code=TIMEOUT, version=6.17.0)...).
+[2026-09-09 16:25:29] ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:30] ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:31] ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:32] ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:34] ERROR: Gagal mengambil getLogs: server response 500 Internal Server Error (request={  }, response={  }, error=null, info={ "requestUrl": "https://mainnet.base.org", "responseBody": "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32020,\"message\":\"backend response too large\"},\"id\":1560}\n", "responseStatus": "500 Internal Server Error" }, code=SERVER_ERROR, version=6.17.0)
+[2026-09-09 16:25:34] ERROR: Koneksi RPC terputus (server response 500 Internal Server Error (request...).

@@ -37,6 +37,7 @@ export class BaseAutoSellBot {
     this.logFile = path.join(process.cwd(), "..", "data_user", this.userId, this.profileName, "bot.log");
     this.errorFile = path.join(process.cwd(), "..", "data_user", this.userId, this.profileName, "error.log");
     this.statusFile = path.join(process.cwd(), "..", "data_user", this.userId, this.profileName, "status.txt");
+    this.globalLogFile = path.join(process.cwd(), "..", "data_user", this.userId, "global_bot.log");
     
     try {
       if (fs.existsSync(this.logFile)) fs.writeFileSync(this.logFile, '');
@@ -63,14 +64,59 @@ export class BaseAutoSellBot {
     
     try {
       fs.writeFileSync(this.logFile, this.logBuffer.join('\n') + '\n', 'utf-8');
-    } catch (e) {}
+      if (msg !== "") {
+        const globalLine = `[${timeStr}] [${this.profileName}] ${msg}`;
+        fs.appendFileSync(this.globalLogFile, globalLine + '\n', 'utf-8');
+      }
+    } catch (e) {
+      console.log("Error writing log:", e);
+    }
   }
 
   errorLog(msg) {
     const wibTime = new Date(Date.now() + 7 * 3600 * 1000);
     const timeStr = wibTime.toISOString().replace('T', ' ').substring(0, 19);
-    fs.appendFileSync(this.errorFile, `[${timeStr}] ERROR: ${msg}\n`);
+    try {
+      fs.appendFileSync(this.errorFile, `[${timeStr}] ERROR: ${msg}\n`, 'utf-8');
+      fs.appendFileSync(this.globalLogFile, `[${timeStr}] [${this.profileName}] ERROR: ${msg}\n`, 'utf-8');
+    } catch (e) {}
     this.log(`❌ ERROR: ${msg}`);
+  }
+
+  async findV4PoolKey(poolId) {
+    const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
+    const NATIVE_ETH = "0x0000000000000000000000000000000000000000";
+    const tokenCa = this.tokenCa.toLowerCase();
+    
+    // Currency0 must be smaller than Currency1
+    const pair1 = [NATIVE_ETH, tokenCa].sort((a, b) => BigInt(a) < BigInt(b) ? -1 : 1);
+    const pair2 = [WETH_ADDRESS.toLowerCase(), tokenCa].sort((a, b) => BigInt(a) < BigInt(b) ? -1 : 1);
+    
+    const possiblePairs = [pair1, pair2];
+    const fees = [100, 500, 3000, 10000];
+    const tickSpacings = [10, 60, 200];
+    
+    for (const pair of possiblePairs) {
+      for (const fee of fees) {
+        for (const tickSpacing of tickSpacings) {
+          const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+            ["address", "address", "uint24", "int24", "address"],
+            [pair[0], pair[1], fee, tickSpacing, "0x0000000000000000000000000000000000000000"]
+          );
+          const hash = ethers.keccak256(encoded);
+          if (hash.toLowerCase() === poolId.toLowerCase()) {
+            return {
+              currency0: pair[0],
+              currency1: pair[1],
+              fee,
+              tickSpacing,
+              usesNativeEth: pair.includes(NATIVE_ETH)
+            };
+          }
+        }
+      }
+    }
+    return null;
   }
 
   async init() {
@@ -96,6 +142,24 @@ export class BaseAutoSellBot {
 
       this.routerContract = new ethers.Contract(dex.router, routerAbi, this.wallet);
       
+      // Tentukan isToken0Weth secara dinamis
+      if (this.dexChoice === "uniswap_v4" && this.lpPool.length === 66) {
+        // Brute force PoolKey untuk V4 guna mengetahui apakah Token0 = ETH/WETH
+        const poolKey = await this.findV4PoolKey(this.lpPool);
+        if (poolKey) {
+          this.isToken0Weth = poolKey.currency0.toLowerCase() !== this.tokenCa.toLowerCase();
+        } else {
+          // Fallback default jika brute force gagal
+          this.isToken0Weth = BigInt(WETH_ADDRESS) < BigInt(this.tokenCa);
+        }
+      } else {
+        // Fallback ke V2/V3 murni (termasuk jika user salah pilih dropdown V4 tapi masukin alamat 42 karakter)
+        const poolContract = new ethers.Contract(this.lpPool, ["function token0() view returns (address)"], this.provider);
+        const token0Addr = await poolContract.token0();
+        // Jika token0 BUKAN tokenCa kita, berarti token0 adalah WETH/Quote Token
+        this.isToken0Weth = token0Addr.toLowerCase() !== this.tokenCa.toLowerCase();
+      }
+
       this.log(`✅ Terhubung ke RPC: ${this.rpcUrls[this.currentRpcIndex]}`);
       this.log(`✅ Dompet: ${this.wallet.address}`);
       
@@ -122,12 +186,30 @@ export class BaseAutoSellBot {
       this.wallet = new ethers.Wallet(this.privateKey, this.provider);
       const checksumCa = ethers.getAddress(this.tokenCa);
       this.tokenContract = new ethers.Contract(checksumCa, ERC20_ABI, this.wallet);
-      const dex = DEX_CONFIG[this.dexChoice];
       let routerAbi;
       if (this.dexChoice === "aerodrome") routerAbi = AERODROME_ROUTER_ABI;
       else if (this.dexChoice === "uniswap_v3") routerAbi = UNISWAP_V3_ROUTER_ABI;
       else routerAbi = UNISWAP_V2_ROUTER_ABI;
       this.routerContract = new ethers.Contract(dex.router, routerAbi, this.wallet);
+      
+      // Tentukan isToken0Weth secara dinamis
+      if (this.dexChoice === "uniswap_v4" && this.lpPool.length === 66) {
+        // Brute force PoolKey untuk V4 guna mengetahui apakah Token0 = ETH/WETH
+        const poolKey = await this.findV4PoolKey(this.lpPool);
+        if (poolKey) {
+          this.isToken0Weth = poolKey.currency0.toLowerCase() !== this.tokenCa.toLowerCase();
+        } else {
+          // Fallback default jika brute force gagal
+          this.isToken0Weth = BigInt(WETH_ADDRESS) < BigInt(this.tokenCa);
+        }
+      } else {
+        // Fallback ke V2/V3 murni (termasuk jika user salah pilih dropdown V4 tapi masukin alamat 42 karakter)
+        const poolContract = new ethers.Contract(this.lpPool, ["function token0() view returns (address)"], this.provider);
+        const token0Addr = await poolContract.token0();
+        // Jika token0 BUKAN tokenCa kita, berarti token0 adalah WETH/Quote Token
+        this.isToken0Weth = token0Addr.toLowerCase() !== this.tokenCa.toLowerCase();
+      }
+
       this.log(`✅ Berhasil terhubung ke RPC baru.`);
       return true;
     } catch (e) {
@@ -270,20 +352,42 @@ export class BaseAutoSellBot {
         const routerAddress = DEX_CONFIG["uniswap_v4"].router;
         const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
         const hooks = "0x0000000000000000000000000000000000000000";
+        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
         
-        // Use a generic fee if not provided, assume 3000
-        const fee = 3000;
-        const tickSpacing = 60;
+        let foundFee = 3000;
+        let foundTick = 60;
+        
+        // Coba tebak fee dan tickSpacing dari PoolId (this.lpPool)
+        const fees = [100, 500, 3000, 10000];
+        const ticks = [1, 10, 60, 200];
+        const curr0 = ETH_ADDRESS;
+        const curr1 = this.tokenCa; // ETH (0x00) selalu < tokenCa
+        
+        for (const f of fees) {
+            let matched = false;
+            for (const t of ticks) {
+                const encoded = abiCoder.encode(
+                    ["address", "address", "uint24", "int24", "address"],
+                    [curr0, curr1, f, t, hooks]
+                );
+                const pid = ethers.keccak256(encoded);
+                if (pid.toLowerCase() === this.lpPool.toLowerCase()) {
+                    foundFee = f;
+                    foundTick = t;
+                    matched = true;
+                    break;
+                }
+            }
+            if (matched) break;
+        }
         
         const poolKey = [
-          ETH_ADDRESS,
-          this.tokenCa,
-          fee,
-          tickSpacing,
+          curr0,
+          curr1,
+          foundFee,
+          foundTick,
           hooks
         ];
-        
-        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
         
         // 1. SWAP_EXACT_IN_SINGLE (0x06)
         // In V4, token0 is the smaller address. ETH (0x0...) is always smaller than any token.
@@ -311,7 +415,7 @@ export class BaseAutoSellBot {
         const params = [p0, p1, p2];
         const v4Input = abiCoder.encode(["bytes", "bytes[]"], [actions, params]);
         
-        // PERMIT2_TRANSFER_FROM = 0x02, V4_SWAP = 0x10, SWEEP = 0x04
+        // PERMIT2_TRANSFER_FROM = 0x0a, V4_SWAP = 0x10, SWEEP = 0x04
         const pPermit = abiCoder.encode(
           ["address", "address", "uint160"], 
           [this.tokenCa, routerAddress, amountToSell]
@@ -321,7 +425,7 @@ export class BaseAutoSellBot {
           [ETH_ADDRESS, this.wallet.address, 0n]
         );
         
-        const commands = "0x021004";
+        const commands = "0x0a1004";
         const inputs = [pPermit, v4Input, pSweep];
         const deadline = Math.floor(Date.now() / 1000) + 600;
         
@@ -448,8 +552,9 @@ export class BaseAutoSellBot {
     let loopCount = 0;
     
     const swapSignatures = [SIG_V3, SIG_V2, SIG_AERO, SIG_V4];
-    const isToken0Weth = BigInt(WETH_ADDRESS) < BigInt(this.tokenCa);
+    const isToken0Weth = this.isToken0Weth;
     
+    // Gunakan panjang karakter untuk deteksi mutlak V4 (karena user sering salah pilih dropdown)
     const isV4 = this.lpPool.length === 66 || this.lpPool.toLowerCase().startsWith("0x1ab15fdc");
     const targetAddress = isV4 ? UNISWAP_V4_POOL_MANAGER : this.lpPool;
 

@@ -1,6 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, useMemo } from "react";
-import { useFormCache } from '@/lib/useFormCache';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import "../monitoring.css";
@@ -88,21 +87,6 @@ export default function ScreenerV2() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
     const [profileName, setProfileName] = useState("");
-
-    const formStates = useMemo(() => ({
-        privateKey, inputCa, lpPool, rpc, slippage, sellRatio
-    }), [privateKey, inputCa, lpPool, rpc, slippage, sellRatio]);
-
-    const setFormStates = useMemo(() => ({
-        privateKey: setPrivateKey,
-        inputCa: setInputCa,
-        lpPool: setLpPool,
-        rpc: setRpc,
-        slippage: setSlippage,
-        sellRatio: setSellRatio
-    }), []);
-
-    useFormCache('screenerv2', privateKey, formStates, setFormStates);
 
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -236,11 +220,11 @@ export default function ScreenerV2() {
                 const savedProfile = localStorage.getItem('activeProfile');
                 if (savedProfile && data.profiles.includes(savedProfile)) {
                     setSelectedProfile(savedProfile);
-                } else if (data.profiles.length > 0) {
-                    setSelectedProfile(data.profiles[0]);
-                    localStorage.setItem('activeProfile', data.profiles[0]);
                 } else {
-                    setSelectedProfile("");
+                    // Do not auto-select, let it be empty so the user can see a blank form
+                    if (!selectedProfile) {
+                        setSelectedProfile("");
+                    }
                 }
             }
         } catch (err) { }
@@ -259,21 +243,8 @@ export default function ScreenerV2() {
         return savedPk === privateKey;
     });
 
-    useEffect(() => {
-        if (!privateKey) {
-            // Biarkan user mengosongkan private key tanpa mereset seluruh form
-            return;
-        }
-        const telegramUser = localStorage.getItem('userName') || 'default_user';
-        const valid = profiles.filter(p => localStorage.getItem(`pk_${telegramUser}_${p}`) === privateKey);
-        
-        // Jika PK yg di-paste ternyata milik profile lain, otomatis switch ke profile tsb
-        if (valid.length > 0 && !valid.includes(selectedProfile)) {
-            setSelectedProfile(valid[0]);
-            localStorage.setItem('activeProfile', valid[0]);
-        }
-        // Jangan paksa selectedProfile jadi "" jika PK baru (belum disave), biarkan user mengedit profile saat ini!
-    }, [privateKey, profiles, selectedProfile]);
+    // Effect removed to prevent auto-switching profile when pasting privateKey, keeping CA and LP blank
+    // useEffect(() => { ... });
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -542,15 +513,8 @@ export default function ScreenerV2() {
         const telegramUser = localStorage.getItem('userName') || 'default_user';
         let finalProfileName = profileName.trim();
         if (!finalProfileName) {
-            if (tokenInfo && tokenInfo.symbol) {
-                let baseName = tokenInfo.symbol;
-                let counter = 1;
-                let candidate = baseName;
-                while (profiles.includes(candidate)) {
-                    counter++;
-                    candidate = `${baseName}${counter}`;
-                }
-                finalProfileName = candidate;
+            if (tokenSymbol) {
+                finalProfileName = tokenSymbol.replace('$', '');
             } else {
                 let counter = 1;
                 while (profiles.includes(`Profil${counter}`)) counter++;
@@ -581,6 +545,7 @@ export default function ScreenerV2() {
                 setSelectedProfile(finalProfileName);
                 await fetchProfiles();
                 showToastMsg("✓ Sukses tersimpan");
+                setShowSettingsModal(false);
             } else {
                 showToastMsg("✕ Gagal menyimpan konfigurasi", "error");
             }
@@ -606,12 +571,28 @@ export default function ScreenerV2() {
             });
 
             if (response.ok) {
-                localStorage.removeItem(`pk_${telegramUser}_${profileToDelete}`);
+                const pkKey = `pk_${telegramUser}_${profileToDelete}`;
+                const pk = localStorage.getItem(pkKey);
+                if (pk) {
+                    const pkPrefix = pk.substring(0, 10);
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('satset_cache_') && key.endsWith(`_${pkPrefix}`)) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                }
+                localStorage.removeItem(pkKey);
+
                 showToastMsg(`🗑️ Profil ${profileToDelete} berhasil dihapus!`, "success");
                 setShowDeleteModal(false);
                 if (selectedProfile === profileToDelete) {
                     localStorage.removeItem('activeProfile');
                     setSelectedProfile("");
+                    setPrivateKey("");
+                    setInputCa("");
+                    setLpPool("");
+                    setRpc("random");
+                    setProfileName("");
                 }
                 await fetchProfiles();
             } else {
@@ -1409,7 +1390,7 @@ export default function ScreenerV2() {
                                     }
                                 }}
                             >LOG TERMINAL</span>
-                            <button className="btn-clear-log" onClick={clearLog}>🗑️ Clear Log</button>
+                            <button className="btn-clear-log" onClick={clearLog} style={{ color: '#ef4444' }}>🗑️ Clear Log</button>
                         </div>
                         <div className="terminal-body">
                             {logs.map((log, idx) => (
@@ -1516,7 +1497,7 @@ export default function ScreenerV2() {
                                 <div className="form-group">
                                     <label>NAMA AKUN PROFIL</label>
                                     <div className="input-with-suffix" style={{ display: 'flex' }}>
-                                        <input type="text" placeholder={`Default: ${tokenInfo?.symbol || 'Profil1'}`} value={profileName} onChange={(e) => { setProfileName(e.target.value); setHasUnsavedChanges(true); }} style={{ paddingRight: '1rem', width: '100%' }} />
+                                        <input type="text" placeholder={`Default: ${tokenSymbol ? tokenSymbol.replace('$', '') : 'ANIMO'}`} value={profileName} onChange={(e) => { setProfileName(e.target.value); setHasUnsavedChanges(true); }} style={{ paddingRight: '1rem', width: '100%' }} />
                                     </div>
                                 </div>
                                 <div className="form-group" style={{ marginTop: '16px' }}>

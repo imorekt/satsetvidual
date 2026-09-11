@@ -1,0 +1,35 @@
+[2026-09-09 13:51:38] ✅ Terhubung ke RPC: https://mainnet.base.org
+[2026-09-09 13:51:38] ✅ Dompet: 0x4b7CDA9204C30B35ee0dA641CB10bcC7A506baA1
+
+[2026-09-09 13:51:38] 📍 Pool V4 PoolId: 0xea1cd1ba5f...113d8682
+
+[2026-09-09 13:51:38] ════════════════════════════════════════════════════════════
+[2026-09-09 13:51:38]   🤖  BASE AUTO-SELL TOKEN BOT
+[2026-09-09 13:51:38] ════════════════════════════════════════════════════════════
+[2026-09-09 13:51:38]   Token   : Unknown (Unknown)
+[2026-09-09 13:51:38]   Wallet  : 0x4b7CDA...06baA1
+[2026-09-09 13:51:38]   ETH Bal : 0.003705 ETH
+[2026-09-09 13:51:38]   Saldo   : 0.00 Unknown
+[2026-09-09 13:51:38]   DEX     : Uniswap V4
+[2026-09-09 13:51:38]   Pool    : 0xea1cd1ba5f...113d8682
+[2026-09-09 13:51:38]   Jual    : 100% dari pembelian
+[2026-09-09 13:51:38]   Slippage: 30%  |  Poll: 1.0s
+[2026-09-09 13:51:38] ────────────────────────────────────────────────────────────
+[2026-09-09 13:51:40] ✅ Token sudah memiliki allowance ke Permit2.
+[2026-09-09 13:51:41] ✅ Token sudah memiliki izin Permit2 (Universal Router V4).
+[2026-09-09 13:51:41] Memantau dari blok 51,073,676... (STOP untuk berhenti)
+
+[2026-09-09 14:14:22] 📡 Memantau Blok: 51,074,357 | Total sell: 0 .. 
+[2026-09-09 16:25:25] ❌ ERROR: Gagal mengambil getLogs: request timeout (code=TIMEOUT, version=6.17.0)
+[2026-09-09 16:25:25] ❌ ERROR: Koneksi RPC terputus (request timeout (code=TIMEOUT, version=6.17.0)...).
+[2026-09-09 16:25:25] ⚠️ Tidak ada RPC cadangan untuk dirotasi.
+[2026-09-09 16:25:29] ❌ ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:30] ❌ ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:31] ❌ ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:32] ❌ ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND mainnet.base.org
+[2026-09-09 16:25:33] 📡 Memantau Blok: 51,078,292 | Total sell: 0 .  
+[2026-09-09 16:25:34] ❌ ERROR: Gagal mengambil getLogs: server response 500 Internal Server Error (request={  }, response={  }, error=null, info={ "requestUrl": "https://mainnet.base.org", "responseBody": "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32020,\"message\":\"backend response too large\"},\"id\":1560}\n", "responseStatus": "500 Internal Server Error" }, code=SERVER_ERROR, version=6.17.0)
+[2026-09-09 16:25:34] ❌ ERROR: Koneksi RPC terputus (server response 500 Internal Server Error (request...).
+[2026-09-09 16:25:34] ⚠️ Tidak ada RPC cadangan untuk dirotasi.
+[2026-09-09 16:27:20] 📡 Memantau Blok: 51,078,346 | Total sell: 0 ...
+[2026-09-09 16:27:21] 🛑 Bot dihentikan secara manual.

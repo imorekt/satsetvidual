@@ -8,9 +8,11 @@
   "private": true,
   "main": "main.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -k -n \"WEBSELL,PUMPFUN\" -c \"cyan.bold,magenta.bold\" \"next dev -p 3000\" \"npm --prefix ../../pumpfun-agent run dev\"",
+    "dev:solo": "next dev -p 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "concurrently -k -n \"WEBSELL,PUMPFUN\" -c \"cyan.bold,magenta.bold\" \"next start -p 3000\" \"npm --prefix ../../pumpfun-agent run start\"",
+    "start:solo": "next start -p 3000",
     "lint": "eslint",
     "electron": "electron .",
     "build:exe": "npm run build && electron-builder --win"
@@ -78,6 +80,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "concurrently": "^10.0.5",
     "electron": "^44.0.0",
     "electron-builder": "^26.15.3",
     "eslint": "^9",

@@ -1,0 +1,31 @@
+[2026-09-09 13:51:41] ✅ Terhubung ke RPC: https://mainnet.base.org
+[2026-09-09 13:51:41] ✅ Dompet: 0xe62B8F16545Fd1cD57423a6d75E18f5bf4A638ce
+
+[2026-09-09 13:51:41] ════════════════════════════════════════════════════════════
+[2026-09-09 13:51:41]   🤖  BASE AUTO-SELL TOKEN BOT
+[2026-09-09 13:51:41] ════════════════════════════════════════════════════════════
+[2026-09-09 13:51:41]   Token   : Unknown (Unknown)
+[2026-09-09 13:51:41]   Wallet  : 0xe62B8F...A638ce
+[2026-09-09 13:51:41]   ETH Bal : 0.022283 ETH
+[2026-09-09 13:51:41]   Saldo   : 0.00 Unknown
+[2026-09-09 13:51:41]   DEX     : Aerodrome
+[2026-09-09 13:51:41]   Pool    : 0xF6410659CA...FB62833A
+[2026-09-09 13:51:41]   Jual    : 98% dari pembelian
+[2026-09-09 13:51:41]   Slippage: 2.5%  |  Poll: 1.0s
+[2026-09-09 13:51:41] ────────────────────────────────────────────────────────────
+[2026-09-09 13:51:50] ✅ Token sudah memiliki allowance.
+[2026-09-09 13:51:51] Memantau dari blok 51,073,681... (STOP untuk berhenti)
+
+[2026-09-09 14:14:21] 📡 Memantau Blok: 51,074,356 | Total sell: 0 .  
+[2026-09-09 16:25:25] ❌ ERROR: Koneksi RPC terputus (request timeout (code=TIMEOUT, version=6.17.0)...).
+[2026-09-09 16:25:27] 🔄 RPC Error terdeteksi! Merotasi ke RPC: https://base-mainnet.g.alchemy.com/public
+[2026-09-09 16:25:27] ❌ ERROR: Gagal merotasi RPC: dex is not defined
+[2026-09-09 16:25:31] ❌ ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND base-mainnet.g.alchemy.com
+[2026-09-09 16:25:32] ❌ ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND base-mainnet.g.alchemy.com
+[2026-09-09 16:25:33] 📡 Memantau Blok: 51,078,292 | Total sell: 0 .. 
+[2026-09-09 16:25:33] ❌ ERROR: Gagal mengambil getLogs: server response 400 Bad Request (request={  }, response={  }, error=null, info={ "requestUrl": "https://base-mainnet.g.alchemy.com/public", "responseBody": "{\"jsonrpc\":\"2.0\",\"id\":4,\"error\":{\"code\":-32600,\"message\":\"You can make eth_getLogs requests with up to a 100 block range. Based on your parameters, this block range should work: [0x30b5535, 0x30b5598]\"}}", "responseStatus": "400 Bad Request" }, code=SERVER_ERROR, version=6.17.0)
+[2026-09-09 16:25:33] ❌ ERROR: Koneksi RPC terputus (server response 400 Bad Request (request={  }, res...).
+[2026-09-09 16:25:33] 🔄 RPC Error terdeteksi! Merotasi ke RPC: https://mainnet.base.org
+[2026-09-09 16:25:33] ❌ ERROR: Gagal merotasi RPC: dex is not defined
+[2026-09-09 16:27:20] 📡 Memantau Blok: 51,078,346 | Total sell: 0 .. 
+[2026-09-09 16:27:21] 🛑 Bot dihentikan secara manual.

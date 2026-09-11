@@ -5,6 +5,7 @@ import Link from "next/link";
 import "./dashboard.css";
 import ProfileModal from "@/components/ProfileModal";
 import InfoModal from "@/components/InfoModal";
+import Agent6ChatWidget from "@/components/agent6/Agent6ChatWidget";
 
 
 const BackgroundCandles = ({ position }) => {
@@ -328,6 +329,12 @@ export default function DashboardLayout({ children }) {
                 <Link href="/dashboard/monitoring/screenerv2" className={pathname === '/dashboard/monitoring/screenerv2' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
                   <span className="icon"><img src="https://dexscreener.com/favicon.png" width="14" height="14" alt="DS" style={{ borderRadius: '50%' }} /></span> Screener V2
                 </Link>
+                <Link href="/dashboard/monitoring/bulk-sell" className={pathname === '/dashboard/monitoring/bulk-sell' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
+                  <span className="icon" style={{ fontSize: '1rem' }}>🚀</span> Bulk Sell
+                </Link>
+                <Link href="/dashboard/monitoring/pumpfun-agent" className={pathname === '/dashboard/monitoring/pumpfun-agent' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
+                  <span className="icon" style={{ fontSize: '1rem' }}>💊</span> PumpFun Agent
+                </Link>
                 <Link href="/dashboard/monitoring/portofolio" className={pathname === '/dashboard/monitoring/portofolio' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
                   <span className="icon" style={{ fontSize: '1rem' }}>💰</span> Portofolio
                 </Link>
@@ -498,16 +505,226 @@ export default function DashboardLayout({ children }) {
 
       {/* Main Content */}
       <main className="dashboard-main">
-        <header className="dashboard-header">
-          {pathname === '/dashboard' && (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#f8fafc' }}>
-                Selamat datang, <span style={{ color: '#007bff' }}>{userName}</span>! 👋
-              </h2>
-            </div>
-          )}
-          <div id="header-search-slot" style={{ flex: pathname === '/dashboard' ? 'none' : 1, paddingRight: '1.5rem' }}></div>
-          <div className="header-actions">
+        {(() => {
+          const pageInfo = (() => {
+            if (pathname === '/dashboard') {
+              return {
+                title: `Selamat datang, ${userName}! 👋`,
+                subtitle: 'Real-time telemetry, ERC-20 liquidity & multi-chain command center',
+                icon: '🏠',
+                tag: 'Overview',
+                badges: [
+                  { label: 'SYSTEM ONLINE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'ERC-20 ECOSYSTEM', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
+                  { label: 'FAST EVM EXECUTION', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/scan-alamat')) {
+              return {
+                title: 'Scan Alamat',
+                subtitle: 'EVM wallet deep audit, ERC-20 token holdings & tx history tracking',
+                icon: '🔍',
+                tag: 'Audit',
+                badges: [
+                  { label: 'EVM RPC CONNECTED', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'TOKEN AUDIT V2', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
+                  { label: 'WHALE TRACKER', dotColor: '#f59e0b', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/deploy')) {
+              return {
+                title: 'Deploy Token',
+                subtitle: 'Instant ERC-20 smart contract deployment with verified source & supply',
+                icon: '🚀',
+                tag: 'Launchpad',
+                badges: [
+                  { label: 'ERC-20 STANDARD', dotColor: '#10b981', color: '#34d399', bg: 'rgba(16, 185, 129, 0.08)', border: 'rgba(16, 185, 129, 0.25)' },
+                  { label: 'SOLIDITY CONTRACT', dotColor: '#3b82f6', color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.25)' },
+                  { label: 'RENOUNCE OWNERSHIP', dotColor: '#f59e0b', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/add-lp')) {
+              return {
+                title: 'Add Single LP',
+                subtitle: 'ERC-20 liquidity provisioning & Uniswap V2 / V3 pool injection',
+                icon: '💧',
+                tag: 'Liquidity',
+                badges: [
+                  { label: 'UNISWAP V2 / V3', dotColor: '#3b82f6', color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.25)' },
+                  { label: 'AMM POOL INJECTION', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
+                  { label: 'LP LOCK / BURN', dotColor: '#f43f5e', color: '#fb7185', bg: 'rgba(244, 63, 94, 0.08)', border: 'rgba(244, 63, 94, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/airdrop')) {
+              return {
+                title: 'Airdrop Engine',
+                subtitle: 'High-speed mass ERC-20 token & ETH distribution across multi-wallets',
+                icon: '🎁',
+                tag: 'Distribution',
+                badges: [
+                  { label: 'BATCH DISPATCH', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'MULTI-RECIPIENT', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' },
+                  { label: 'GAS OPTIMIZER', dotColor: '#38bdf8', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.08)', border: 'rgba(56, 189, 248, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/monitoring/screenerv2')) {
+              return {
+                title: 'Screener V2',
+                subtitle: 'Live ERC-20 DEX radar, Uniswap/Pancake pool volume spikes & charts',
+                icon: '📊',
+                tag: 'Radar',
+                badges: [
+                  { label: 'DEX RADAR LIVE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'REALTIME VOLUME', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
+                  { label: 'HOT TRENDS 24H', dotColor: '#ec4899', color: '#f472b6', bg: 'rgba(236, 72, 153, 0.08)', border: 'rgba(236, 72, 153, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/monitoring/bulk-sell')) {
+              return {
+                title: 'Bulk Sell Engine',
+                subtitle: 'Multi-wallet mass ERC-20 liquidation & MEV-resistant take-profit exits',
+                icon: '⚡',
+                tag: 'Trading',
+                badges: [
+                  { label: 'AUTO-SELL ACTIVE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'ANTI-MEV SLIPPAGE', dotColor: '#f59e0b', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)' },
+                  { label: 'INSTANT LIQUIDATION', dotColor: '#f97316', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.08)', border: 'rgba(249, 115, 22, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/monitoring/pumpfun-agent')) {
+              return {
+                title: 'PumpFun Agent Suite',
+                subtitle: 'Autonomous AI agents, copy-trading engine & sniper telemetry',
+                icon: '💊',
+                tag: 'AI Engine',
+                badges: [
+                  { label: 'SOLANA MAINNET', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'JITO MEV READY', dotColor: '#f59e0b', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)' },
+                  { label: 'MULTI-AGENT AI', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.1)', border: 'rgba(168, 85, 247, 0.3)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/monitoring/portofolio')) {
+              return {
+                title: 'Portofolio Tracker',
+                subtitle: 'Consolidated EVM wallet balances, realized PnL & token valuations',
+                icon: '💰',
+                tag: 'Portfolio',
+                badges: [
+                  { label: 'BALANCE SYNCED', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'ERC-20 ASSETS', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
+                  { label: 'MULTI-CHAIN EVM', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/fiturlainnya/wallet-generator')) {
+              return {
+                title: 'Wallet Generator',
+                subtitle: 'Generate bulk EVM keypairs & custom vanity addresses securely',
+                icon: '👛',
+                tag: 'Tools',
+                badges: [
+                  { label: 'CLIENT-SIDE SAFE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'SECP256K1 KEYPAIR', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
+                  { label: 'OFFLINE ENGINE', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/fiturlainnya/bulk-transfer')) {
+              return {
+                title: 'Bulk Transfer',
+                subtitle: 'Batch transfer ETH & ERC-20 tokens to multiple destination addresses',
+                icon: '💸',
+                tag: 'Tools',
+                badges: [
+                  { label: 'BATCH TX DISPATCH', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'ERC-20 & ETH SUPPORT', dotColor: '#3b82f6', color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.25)' },
+                  { label: 'GAS OPTIMIZED', dotColor: '#f59e0b', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)' }
+                ]
+              };
+            }
+            if (pathname.includes('/dashboard/fiturlainnya/os-eligible-checker')) {
+              return {
+                title: 'OS Eligible Checker',
+                subtitle: 'Verify EVM on-chain snapshot eligibility & reward distribution status',
+                icon: '⛵',
+                tag: 'Airdrop',
+                badges: [
+                  { label: 'SNAPSHOT VERIFIER', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
+                  { label: 'TIER CHECKER', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'INSTANT AUDIT', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' }
+                ]
+              };
+            }
+            return {
+              title: 'SATSET VIDUAL',
+              subtitle: 'High-Performance ERC-20 Trading Suite',
+              icon: '⚡',
+              tag: 'Dashboard',
+              badges: [
+                { label: 'SYSTEM ONLINE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                { label: 'ERC-20 CHAIN', dotColor: '#38bdf8', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.08)', border: 'rgba(56, 189, 248, 0.25)' }
+              ]
+            };
+          })();
+
+          return (
+            <header className="dashboard-header">
+              {/* Left: Dynamic Page Title / Breadcrumb */}
+              <div className="header-title-section">
+                <div className="header-icon-box">
+                  {pageInfo.icon}
+                </div>
+                <div>
+                  <div className="header-title-row">
+                    <h2 className="header-page-title">
+                      {pathname === '/dashboard' ? (
+                        <>Selamat datang, <span style={{ color: '#00e676' }}>{userName}</span>! 👋</>
+                      ) : (
+                        pageInfo.title
+                      )}
+                    </h2>
+                    <span className="header-page-tag">{pageInfo.tag}</span>
+                  </div>
+                  <p className="header-page-subtitle">{pageInfo.subtitle}</p>
+                </div>
+              </div>
+
+              {/* Center: Contextual Status Chips Per Page */}
+              <div className="header-status-center">
+                {pageInfo.badges?.map((badge, idx) => (
+                  <div
+                    key={idx}
+                    className="header-status-pill"
+                    style={{
+                      background: badge.bg,
+                      borderColor: badge.border,
+                      color: badge.color
+                    }}
+                  >
+                    <span
+                      className="pulse-dot"
+                      style={{
+                        background: badge.dotColor,
+                        boxShadow: `0 0 8px ${badge.dotColor}`
+                      }}
+                    ></span>
+                    <span>{badge.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Right: Search Slot & Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div id="header-search-slot"></div>
+                <div className="header-actions">
             <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
               <button className="notification-btn" onClick={handleToggleNotifMenu} style={{ position: 'relative' }}>
                 🔔
@@ -597,7 +814,10 @@ export default function DashboardLayout({ children }) {
               )}
             </div>
           </div>
-        </header>
+        </div>
+      </header>
+    );
+  })()}
 
         {children}
       </main>
@@ -678,6 +898,9 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
       )}
+
+      {/* Agent 6 AI Live Chat & Auto-Coder Copilot */}
+      <Agent6ChatWidget />
 
     </div>
   );

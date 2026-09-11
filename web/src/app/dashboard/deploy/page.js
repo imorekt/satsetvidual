@@ -124,7 +124,7 @@ export default function DeployTokenPage() {
         showNotification('Deployment Berhasil!', 'success');
         setDeployResult(data.stdout);
 
-        // Auto-save to profile for Add LP
+        // Auto-save to profile for Add LP and Screener V2
         if (data.contractAddress) {
           const caAddress = data.contractAddress;
           const newProfile = { name: tokenName, symbol: tokenSymbol, ca: caAddress, network: deployNetwork, privateKey: privateKey, timestamp: Date.now() };
@@ -133,6 +133,30 @@ export default function DeployTokenPage() {
             const existingProfiles = JSON.parse(localStorage.getItem('deployed_tokens') || '[]');
             existingProfiles.unshift(newProfile); // Add to top
             localStorage.setItem('deployed_tokens', JSON.stringify(existingProfiles));
+            
+            // Auto-save to Bulk Sell profile
+            const telegramUser = localStorage.getItem('userName') || 'default_user';
+            const finalProfileName = tokenName || tokenSymbol || 'TokenBaru';
+            
+            fetch('/api/autosell/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userName: telegramUser,
+                    profileName: finalProfileName,
+                    privateKey: privateKey,
+                    inputCa: caAddress,
+                    lpPool: '',
+                    rpc: deployNetwork === 'ROBINHOOD' ? 'https://robinhood.rpc.subquery.network/public' : 'https://mainnet.base.org',
+                    gasMultiplier: "1.2",
+                    slippage: "30",
+                    sellRatio: "100"
+                }),
+            }).catch(e => console.error(e));
+            
+            // Save pk to localStorage so Bulk Sell dropdown can filter and show it
+            localStorage.setItem(`pk_${telegramUser}_${finalProfileName}`, privateKey);
+            
           } catch(e) {
             console.error('Failed to save profile', e);
           }

@@ -1,25 +1,26 @@
 [2026-09-09 13:51:38] ✅ Terhubung ke RPC: https://mainnet.base.org
-[2026-09-09 13:51:38] ✅ Dompet: 0x4b7CDA9204C30B35ee0dA641CB10bcC7A506baA1
+[2026-09-09 13:51:38] ✅ Dompet: 0xe62B8F16545Fd1cD57423a6d75E18f5bf4A638ce
 
-[2026-09-09 13:51:38] 📍 Pool V4 PoolId: 0xc6eb89cc6b...731042f4
+[2026-09-09 13:51:38] 📍 Pool V4 PoolId: 0xd86e90c4e6...27e2ab2b
 
 [2026-09-09 13:51:38] ════════════════════════════════════════════════════════════
 [2026-09-09 13:51:38]   🤖  BASE AUTO-SELL TOKEN BOT
 [2026-09-09 13:51:38] ════════════════════════════════════════════════════════════
-[2026-09-09 13:51:38]   Token   : $MIO (Magic Internet Oil)
-[2026-09-09 13:51:38]   Wallet  : 0x4b7CDA...06baA1
-[2026-09-09 13:51:38]   ETH Bal : 0.003705 ETH
-[2026-09-09 13:51:38]   Saldo   : 249,264,347.771139 $MIO
+[2026-09-09 13:51:38]   Token   : Unknown (Base Company Oil Project)
+[2026-09-09 13:51:38]   Wallet  : 0xe62B8F...A638ce
+[2026-09-09 13:51:38]   ETH Bal : 0.022283 ETH
+[2026-09-09 13:51:38]   Saldo   : 0.00 Unknown
 [2026-09-09 13:51:38]   DEX     : Uniswap V4
-[2026-09-09 13:51:38]   Pool    : 0xc6eb89cc6b...731042f4
+[2026-09-09 13:51:38]   Pool    : 0xd86e90c4e6...27e2ab2b
 [2026-09-09 13:51:38]   Jual    : 98% dari pembelian
 [2026-09-09 13:51:38]   Slippage: 2.5%  |  Poll: 1.0s
 [2026-09-09 13:51:38] ────────────────────────────────────────────────────────────
-[2026-09-09 13:51:41] ✅ Token sudah memiliki allowance ke Permit2.
-[2026-09-09 13:51:41] ✅ Token sudah memiliki izin Permit2 (Universal Router V4).
-[2026-09-09 13:51:41] Memantau dari blok 51,073,676... (STOP untuk berhenti)
+[2026-09-09 13:51:57] ✅ Token sudah memiliki allowance ke Permit2.
+[2026-09-09 13:51:58] ✅ Token sudah memiliki izin Permit2 (Universal Router V4).
+[2026-09-09 13:51:58] Memantau dari blok 51,073,685... (STOP untuk berhenti)
 
-[2026-09-09 14:14:22] 📡 Memantau Blok: 51,074,357 | Total sell: 0 .  
+[2026-09-09 14:14:22] 📡 Memantau Blok: 51,074,357 | Total sell: 0 .. 
+[2026-09-09 16:25:27] ❌ ERROR: Gagal mengambil getLogs: request timeout (code=TIMEOUT, version=6.17.0)
 [2026-09-09 16:25:28] ❌ ERROR: Koneksi RPC terputus (request timeout (code=TIMEOUT, version=6.17.0)...).
 [2026-09-09 16:25:28] 🔄 RPC Error terdeteksi! Merotasi ke RPC: https://base-mainnet.g.alchemy.com/public
 [2026-09-09 16:25:28] ❌ ERROR: Gagal merotasi RPC: dex is not defined

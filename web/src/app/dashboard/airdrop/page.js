@@ -38,9 +38,9 @@ const createFallbackProvider = (networkUrl) => {
 const DISPERSE_ABI = [
   {
     "inputs": [
-      {"name": "token", "type": "address"},
-      {"name": "recipients", "type": "address[]"},
-      {"name": "amountPerWallet", "type": "uint256"}
+      { "name": "token", "type": "address" },
+      { "name": "recipients", "type": "address[]" },
+      { "name": "amountPerWallet", "type": "uint256" }
     ],
     "name": "disperseToken",
     "outputs": [],
@@ -49,8 +49,8 @@ const DISPERSE_ABI = [
   },
   {
     "inputs": [
-      {"name": "recipients", "type": "address[]"},
-      {"name": "amountPerWallet", "type": "uint256[]"}
+      { "name": "recipients", "type": "address[]" },
+      { "name": "amountPerWallet", "type": "uint256[]" }
     ],
     "name": "disperseEther",
     "outputs": [],
@@ -74,7 +74,7 @@ let globalAirdropSession = null;
 
 export default function AirdropPage() {
   const [privateKey, setPrivateKey] = useState('');
-  const [disperseContract, setDisperseContract] = useState('0xf4691C5Aa0d8470C832c1cBd05d6A77bd570ad65');
+  const [disperseContract, setDisperseContract] = useState('0xD152f549545093347A162Dce210e7293f1452150');
   const [skipHolderCA, setSkipHolderCA] = useState('');
   const [nominalAmount, setNominalAmount] = useState('1.0');
   const [walletList, setWalletList] = useState('');
@@ -85,7 +85,7 @@ export default function AirdropPage() {
   const [userRole, setUserRole] = useState('Member');
   const [terminalLog, setTerminalLog] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
-  
+
   const [skipHolderSymbol, setSkipHolderSymbol] = useState('');
   const [isFiltering, setIsFiltering] = useState(false);
 
@@ -94,6 +94,9 @@ export default function AirdropPage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState('manual');
+  
+  const [loadedKeys, setLoadedKeys] = useState([]);
+  const [showKeysDropdown, setShowKeysDropdown] = useState(false);
 
   const terminalRef = useRef(null);
 
@@ -114,7 +117,7 @@ export default function AirdropPage() {
     if (typeof window !== 'undefined') {
       const role = localStorage.getItem('userRole') || 'Member';
       setUserRole(role);
-      
+
       const handleProfileUpdated = () => {
         setUserRole(localStorage.getItem('userRole') || 'Member');
       };
@@ -122,13 +125,13 @@ export default function AirdropPage() {
 
       const savedLog = sessionStorage.getItem('websell_airdrop_terminalLog');
       if (savedLog) setTerminalLog(savedLog);
-      
+
       const dropping = sessionStorage.getItem('websell_airdrop_isAirdropping');
       if (dropping === 'true') setIsAirdropping(true);
 
       const confirming = sessionStorage.getItem('websell_airdrop_isConfirming');
       if (confirming === 'true') setIsConfirming(true);
-      
+
       const savedDc = localStorage.getItem('websell_airdrop_disperseContract');
       if (savedDc) setDisperseContract(savedDc);
 
@@ -143,9 +146,9 @@ export default function AirdropPage() {
             sessionStorage.removeItem('websell_uniqueAddresses');
             loadedFromScan = true;
           }
-        } catch(e) {}
+        } catch (e) { }
       }
-      
+
       if (!loadedFromScan) {
         const sWall = sessionStorage.getItem('websell_airdrop_walletList');
         if (sWall) setWalletList(sWall);
@@ -153,20 +156,28 @@ export default function AirdropPage() {
 
       const sPk = sessionStorage.getItem('websell_airdrop_privateKey');
       if (sPk) setPrivateKey(sPk);
-      
+
       const sNom = sessionStorage.getItem('websell_airdrop_nominalAmount');
       if (sNom) setNominalAmount(sNom);
-      
+
       const scanNet = localStorage.getItem('websell_airdrop_scanNetwork') || 'BASE';
       setScanNetwork(scanNet);
-      
+
       const sSkipCA = sessionStorage.getItem('websell_airdrop_skipHolderCA');
       if (sSkipCA) setSkipHolderCA(sSkipCA);
       const sSkipSym = sessionStorage.getItem('websell_airdrop_skipHolderSymbol');
       if (sSkipSym) setSkipHolderSymbol(sSkipSym);
-      
+
       const savedTokens = JSON.parse(localStorage.getItem('deployed_tokens') || '[]');
       setDeployedTokens(savedTokens);
+      
+      // Fetch private keys
+      fetch('/api/privatekeys')
+        .then(res => res.json())
+        .then(data => {
+          if (data.accounts) setLoadedKeys(data.accounts);
+        })
+        .catch(err => console.error("Gagal load private keys", err));
       
       setIsLoaded(true);
       return () => window.removeEventListener('profileUpdated', handleProfileUpdated);
@@ -190,6 +201,17 @@ export default function AirdropPage() {
       if (typeof localStorage !== 'undefined') localStorage.setItem('websell_airdrop_scanNetwork', scanNetwork);
     }
   }, [privateKey, nominalAmount, walletList, scanNetwork, skipHolderCA, skipHolderSymbol, isLoaded]);
+
+  const hasLoadedData = useRef(false);
+  useEffect(() => {
+    if (isLoaded) {
+      if (!hasLoadedData.current) {
+        hasLoadedData.current = true;
+      } else {
+        setNominalAmount('0');
+      }
+    }
+  }, [privateKey, skipHolderCA, isLoaded]);
 
   const countAddresses = (text) => {
     if (!text) return 0;
@@ -231,7 +253,7 @@ export default function AirdropPage() {
           const savedLog = sessionStorage.getItem('websell_airdrop_terminalLog');
           if (savedLog) setTerminalLog(savedLog);
         }
-        
+
         const confirming = sessionStorage.getItem('websell_airdrop_isConfirming');
         if (confirming === 'false' && isConfirming) setIsConfirming(false);
       }
@@ -268,13 +290,13 @@ export default function AirdropPage() {
         const provider = createFallbackProvider(rpcUrl);
         const contract = new ethers.Contract(skipHolderCA, ERC20_ABI, provider);
         const sym = await contract.symbol();
-        
+
         let tName = sym;
-        try { tName = await contract.name(); } catch(e) {}
-        
+        try { tName = await contract.name(); } catch (e) { }
+
         if (active) {
           setSkipHolderSymbol(sym);
-          
+
           // Auto-save the CA profile so it appears in the Profil Token list automatically
           const pk = typeof privateKey !== 'undefined' ? privateKey.trim() : '';
           const currentTokens = JSON.parse(localStorage.getItem('deployed_tokens') || '[]');
@@ -319,18 +341,18 @@ export default function AirdropPage() {
   const handleFilterHolders = async () => {
     if (!walletList.trim()) return alert("Daftar Address kosong!");
     if (!skipHolderCA || !ethers.isAddress(skipHolderCA)) return alert("CA Skip Holder tidak valid!");
-    
+
     setIsFiltering(true);
     addLog(`\n🔎 [FILTER] Memulai scan Holder untuk token ${skipHolderSymbol || skipHolderCA}`);
-    
+
     try {
       const rpcUrl = getRpcUrl(scanNetwork);
       const provider = createFallbackProvider(rpcUrl);
-      
+
       const rawLines = walletList.split('\n');
       const uniqueAddrs = [];
       const seen = new Set();
-      
+
       for (const line of rawLines) {
         const match = line.match(/(0x[a-fA-F0-9]{40})/);
         if (!match) continue;
@@ -340,7 +362,7 @@ export default function AirdropPage() {
           uniqueAddrs.push(cleanLine);
         }
       }
-      
+
       if (uniqueAddrs.length === 0) {
         addLog(`❌ Tidak ada alamat valid untuk di-scan.`);
         setIsFiltering(false);
@@ -350,30 +372,30 @@ export default function AirdropPage() {
       const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
       const multicallAbi = ["function tryAggregate(bool requireSuccess, tuple(address target, bytes callData)[] calls) view returns (tuple(bool success, bytes returnData)[] returnData)"];
       let multicall = new ethers.Contract(MULTICALL3, multicallAbi, provider);
-      
+
       const tokenIface = new ethers.Interface(ERC20_ABI);
       const BATCH_SIZE = 500;
       let nonHolders = [];
       let foundHoldersCount = 0;
-      
+
       for (let i = 0; i < uniqueAddrs.length; i += BATCH_SIZE) {
         const batchAddrs = uniqueAddrs.slice(i, i + BATCH_SIZE);
-        addLog(`[FILTER] Mengecek batch ${i+1} sampai ${i + batchAddrs.length}...`);
-        
+        addLog(`[FILTER] Mengecek batch ${i + 1} sampai ${i + batchAddrs.length}...`);
+
         const calls = batchAddrs.map(addr => {
           return {
             target: skipHolderCA,
             callData: tokenIface.encodeFunctionData("balanceOf", [addr])
           };
         });
-        
+
         try {
           const result = await multicall.tryAggregate(false, calls);
-          
+
           for (let j = 0; j < batchAddrs.length; j++) {
             const success = result[j][0];
             const returnData = result[j][1];
-            
+
             if (success && returnData !== '0x') {
               try {
                 const bal = tokenIface.decodeFunctionResult("balanceOf", returnData)[0];
@@ -382,7 +404,7 @@ export default function AirdropPage() {
                 } else {
                   foundHoldersCount++;
                 }
-              } catch(e) {
+              } catch (e) {
                 // Decode fail
                 nonHolders.push(batchAddrs[j]);
               }
@@ -394,18 +416,18 @@ export default function AirdropPage() {
           addLog(`❌ Gagal mengecek batch ini: ${e.shortMessage || e.message}`);
           nonHolders.push(...batchAddrs); // Asumsi aman
         }
-        
+
         // Jeda 500ms agar tidak over-limit RPC
         if (i + BATCH_SIZE < uniqueAddrs.length) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
-      
+
       const formatted = nonHolders.join('\n');
       setWalletList(formatted);
       addLog(`✅ [FILTER SELESAI] Ditemukan dan dihapus: ${foundHoldersCount} alamat holder.`);
       addLog(`✅ Sisa alamat yang belum memiliki token: ${nonHolders.length}`);
-      
+
     } catch (err) {
       addLog(`❌ ERROR FILTER: ${err.message}`);
     } finally {
@@ -424,11 +446,11 @@ export default function AirdropPage() {
       sessionStorage.setItem('websell_airdrop_isAirdropping', 'true');
       sessionStorage.setItem('websell_airdrop_abortScan', 'false');
     }
-    
+
     const startMsg = "==========================================\n🚀 MEMULAI PROSES AIRDROP\n==========================================\n";
     setTerminalLog(startMsg);
     if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('websell_airdrop_terminalLog', startMsg);
-    
+
     globalAirdropAbortController = new AbortController();
     const signal = globalAirdropAbortController.signal;
 
@@ -438,15 +460,15 @@ export default function AirdropPage() {
       addLog(`[NET] Menghubungkan ke jaringan...`);
       const provider = createFallbackProvider(rpcUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
-      
+
       const disperseAddress = ethers.getAddress(disperseContract);
       let disperse = new ethers.Contract(disperseAddress, DISPERSE_ABI, wallet);
-      
+
       const mode = skipHolderCA.trim() === '' ? 'eth' : 'erc20';
       let tokenContract = null;
       let decimals = 18;
       let symbol = scanNetwork === 'BASE' ? 'ETH' : 'RBNHD'; // assuming native currency symbol
-      
+
       if (mode === 'erc20') {
         const tAddr = ethers.getAddress(skipHolderCA);
         tokenContract = new ethers.Contract(tAddr, ERC20_ABI, wallet);
@@ -461,12 +483,12 @@ export default function AirdropPage() {
       const rawLines = walletList.split('\n');
       const recipients = [];
       const seen = new Set();
-      
+
       for (const line of rawLines) {
         const match = line.match(/(0x[a-fA-F0-9]{40})/);
         if (!match) continue;
         const cleanLine = match[1];
-        
+
         try {
           if (ethers.isAddress(cleanLine)) {
             const addr = ethers.getAddress(cleanLine);
@@ -475,23 +497,23 @@ export default function AirdropPage() {
               recipients.push(addr);
             }
           }
-        } catch(e) {}
+        } catch (e) { }
       }
-      
+
       if (recipients.length === 0) {
         addLog(`❌ Tidak ada alamat valid yang ditemukan!`);
         throw new Error("No valid recipients");
       }
-      
+
       addLog(`[DATA] ✓ ${recipients.length} alamat valid dimuat.`);
-      
+
       const amountPerWalletHuman = Number(nominalAmount);
       const amountPerWalletWei = ethers.parseUnits(amountPerWalletHuman.toString(), decimals);
       const totalHuman = amountPerWalletHuman * recipients.length;
       const totalWei = amountPerWalletWei * BigInt(recipients.length);
-      
+
       addLog(`[INFO] Total Airdrop: ${totalHuman} ${symbol}`);
-      
+
       // 3. Cek Saldo
       addLog(`[GAS] Mengecek saldo...`);
       const ethBal = await provider.getBalance(wallet.address);
@@ -509,9 +531,9 @@ export default function AirdropPage() {
         }
         addLog(`[GAS] ✓ Saldo Native cukup.`);
       }
-      
+
       // GAS ESTIMATION ASCII BOX
-      const BATCH_SIZE = 450;
+      const BATCH_SIZE = 500;
       const n_batches = Math.ceil(recipients.length / BATCH_SIZE);
       let ethPriceUsd = 0;
       try {
@@ -520,7 +542,7 @@ export default function AirdropPage() {
           const data = await res.json();
           ethPriceUsd = Number(data.ethereum.usd);
         }
-      } catch (e) {}
+      } catch (e) { }
 
       const feeData = await provider.getFeeData();
       const baseFee = feeData.gasPrice || ethers.parseUnits('0.005', 'gwei'); // fallback
@@ -530,17 +552,18 @@ export default function AirdropPage() {
 
       let avg_gas_per_batch = 0;
       let gas_approve = 0;
+      let gas_disperse_total = 0;
+      
       if (mode === 'erc20') {
         gas_approve = 60000;
-        const batchSample = Math.min(recipients.length, BATCH_SIZE);
-        avg_gas_per_batch = 35000 + batchSample * 25000;
+        gas_disperse_total = (recipients.length * 20500) + (n_batches * 35000);
       } else {
-        const batchSample = Math.min(recipients.length, BATCH_SIZE);
-        avg_gas_per_batch = 35000 + batchSample * 6800;
+        gas_disperse_total = (recipients.length * 6800) + (n_batches * 35000);
       }
-      const gas_disperse_total = avg_gas_per_batch * n_batches;
-      const gas_per_wallet = gas_approve + gas_disperse_total;
       
+      avg_gas_per_batch = Math.floor(gas_disperse_total / n_batches);
+      const gas_per_wallet = gas_approve + gas_disperse_total;
+
       const fee_avg = Number(ethers.formatEther(BigInt(Math.floor(avg_gas_per_batch)) * baseFee));
       const fee_per_wallet = Number(ethers.formatEther(BigInt(Math.floor(gas_per_wallet)) * baseFee));
       const fee_approve_eth = Number(ethers.formatEther(BigInt(gas_approve) * baseFee));
@@ -559,11 +582,11 @@ export default function AirdropPage() {
       estLog += `  Avg gas per batch   : ${padL(avg_gas_per_batch.toLocaleString("en-US"), 12)} gas\n`;
       estLog += `  Fee per batch       : ${padR(fee_avg.toFixed(8) + " ETH", 18)} ${toUsd(fee_avg)}\n`;
       estLog += `  Total batch         : ${n_batches}\n\n`;
-      
+
       estLog += `[Network Info]\n`;
       estLog += `  Gas Price (base fee): ${baseGwei.toFixed(6)} gwei\n`;
       estLog += `  Gas Price (max fee) : ${maxGwei.toFixed(6)} gwei\n\n`;
-      
+
       estLog += `[PER WALLET]\n`;
       if (mode === 'erc20') {
         estLog += `  Gas approve         : ${padL(gas_approve.toLocaleString("en-US"), 12)} gas\n`;
@@ -571,26 +594,26 @@ export default function AirdropPage() {
       estLog += `  Gas disperse total  : ${padL(gas_disperse_total.toLocaleString("en-US"), 12)} gas (${n_batches} batch x avg)\n`;
       estLog += `  Gas total           : ${padL(gas_per_wallet.toLocaleString("en-US"), 12)} gas\n`;
       estLog += `  Fee ETH per wallet  : ${padR(fee_per_wallet.toFixed(8) + " ETH", 18)} ${toUsd(fee_per_wallet)}\n\n`;
-      
+
       estLog += `[TOTAL SEMUA WALLET]\n`;
       estLog += `  Jumlah wallet       : 1\n`;
       if (mode === 'erc20') {
         estLog += `  Fee approve total   : ${padR(fee_approve_eth.toFixed(8) + " ETH", 18)} ${toUsd(fee_approve_eth)}\n`;
       }
       estLog += `  Fee disperse total  : ${padR(disp_total.toFixed(8) + " ETH", 18)} ${toUsd(disp_total)}\n\n`;
-      
+
       estLog += `* TOTAL GAS FEE (estimasi): ${fee_total_eth.toFixed(8)} ETH  ${toUsd(fee_total_eth)}\n`;
-      
+
       addLog(estLog);
 
       // Selesai estimasi
       addLog(`\n✅ ESTIMASI SELESAI. Silakan klik "Konfirmasi Airdrop" untuk melanjutkan transaksi.`);
-      
+
       globalAirdropSession = {
         wallet, disperseAddress, disperse, mode, tokenContract, totalWei,
         amountPerWalletWei, recipients, skipHolderCA
       };
-      
+
       setIsConfirming(true);
       if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('websell_airdrop_isConfirming', 'true');
 
@@ -622,12 +645,12 @@ export default function AirdropPage() {
       if (mode === 'erc20') {
         addLog(`[APPROVE] Mengecek allowance ke contract Disperse...`);
         const currentAllowance = await tokenContract.allowance(wallet.address, disperseAddress);
-          if (currentAllowance < totalWei) {
-            addLog(`[APPROVE] Meminta persetujuan (Approve) untuk MAX amount...`);
-            const maxInt = ethers.MaxUint256;
-            const nonce = await wallet.provider.getTransactionCount(wallet.address, 'pending');
-            const approveTx = await tokenContract.approve(disperseAddress, maxInt, { nonce, gasLimit: 60000 });
-            addLog(`[APPROVE] Tx: ${approveTx.hash}`);
+        if (currentAllowance < totalWei) {
+          addLog(`[APPROVE] Meminta persetujuan (Approve) untuk MAX amount...`);
+          const maxInt = ethers.MaxUint256;
+          const nonce = await wallet.provider.getTransactionCount(wallet.address, 'pending');
+          const approveTx = await tokenContract.approve(disperseAddress, maxInt, { nonce, gasLimit: 60000 });
+          addLog(`[APPROVE] Tx: ${approveTx.hash}`);
           await approveTx.wait(1);
           addLog(`[APPROVE] ✓ Approve Sukses!`);
         } else {
@@ -638,36 +661,36 @@ export default function AirdropPage() {
       if (checkAborted(signal)) throw new Error("Dibatalkan User");
 
       // 5. Chunking & Disperse
-      const BATCH_SIZE = 450;
+      const BATCH_SIZE = 500;
       const batches = [];
       for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
         batches.push(recipients.slice(i, i + BATCH_SIZE));
       }
-      
+
       addLog(`\n🚀 Mulai Disperse (${batches.length} Batch)...`);
-      
+
       for (let i = 0; i < batches.length; i++) {
         if (checkAborted(signal)) throw new Error("Dibatalkan User");
         const batchAddrs = batches[i];
         const batchAmounts = Array(batchAddrs.length).fill(amountPerWalletWei);
         const batchTotalWei = amountPerWalletWei * BigInt(batchAddrs.length);
-        
-        addLog(`[BATCH ${i+1}/${batches.length}] Mengirim ke ${batchAddrs.length} alamat...`);
-        
+
+        addLog(`[BATCH ${i + 1}/${batches.length}] Mengirim ke ${batchAddrs.length} alamat...`);
+
         try {
           let tx;
           const nonce = await wallet.provider.getTransactionCount(wallet.address, 'pending');
-          
+
           const batchSample = batchAddrs.length;
           let gasLimitEstimated;
-          
+
           if (mode === 'erc20') {
             try {
               gasLimitEstimated = await disperse.disperseToken.estimateGas(skipHolderCA, batchAddrs, amountPerWalletWei, { nonce });
               gasLimitEstimated = (gasLimitEstimated * 115n) / 100n; // 15% buffer
             } catch (e) {
-               gasLimitEstimated = BigInt(60000 + batchSample * 35000);
-               addLog(`   ⚠️ Simulasi lambat/terkendala, beralih ke batas gas manual: ${gasLimitEstimated}`);
+              gasLimitEstimated = BigInt(35000 + batchSample * 27000);
+              addLog(`   ⚠️ Simulasi lambat/terkendala, beralih ke batas gas manual: ${gasLimitEstimated}`);
             }
             tx = await disperse.disperseToken(skipHolderCA, batchAddrs, amountPerWalletWei, { nonce, gasLimit: gasLimitEstimated });
           } else {
@@ -675,12 +698,12 @@ export default function AirdropPage() {
               gasLimitEstimated = await disperse.disperseEther.estimateGas(batchAddrs, batchAmounts, { value: batchTotalWei, nonce });
               gasLimitEstimated = (gasLimitEstimated * 115n) / 100n; // 15% buffer
             } catch (e) {
-               gasLimitEstimated = BigInt(50000 + batchSample * 10000);
-               addLog(`   ⚠️ Simulasi lambat/terkendala, beralih ke batas gas manual: ${gasLimitEstimated}`);
+              gasLimitEstimated = BigInt(50000 + batchSample * 10000);
+              addLog(`   ⚠️ Simulasi lambat/terkendala, beralih ke batas gas manual: ${gasLimitEstimated}`);
             }
             tx = await disperse.disperseEther(batchAddrs, batchAmounts, { value: batchTotalWei, nonce, gasLimit: gasLimitEstimated });
           }
-          
+
           addLog(`\n[DISPERSE] Batch ${i + 1}/${batches.length} Tx: ${tx.hash}\n   🔗 https://basescan.org/tx/${tx.hash}`);
           addLog(`   Menunggu konfirmasi blok...`);
           const receipt = await tx.wait(1);
@@ -693,10 +716,10 @@ export default function AirdropPage() {
           } else if (e.error && e.error.message) {
             errMsg = e.error.message;
           }
-          addLog(`   ❌ Gagal Batch ${i+1}: ${errMsg}`);
+          addLog(`   ❌ Gagal Batch ${i + 1}: ${errMsg}`);
         }
       }
-      
+
       if (!checkAborted(signal)) {
         addLog(`\n✅ PROSES AIRDROP SELESAI SELURUHNYA!`);
       }
@@ -734,7 +757,7 @@ export default function AirdropPage() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 2rem', width: '100%', maxWidth: '1200px', margin: '0 auto', height: 'calc(100vh - 90px - 1.5rem)', maxHeight: 'calc(100vh - 90px - 1.5rem)', minHeight: 0 }}>
       <div style={{ background: '#0d0d12', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minHeight: 0, overflow: 'hidden' }}>
-        
+
         {(userRole !== 'Premium' && userRole !== 'Developer') && (
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(13, 13, 18, 0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
@@ -748,21 +771,50 @@ export default function AirdropPage() {
         </div>
 
         <div style={{ display: 'flex', gap: '2rem', flex: 1, minHeight: 0 }}>
-          
+
           {/* Form Kiri */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: '400px', minHeight: 0 }}>
-            
+
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, position: 'relative' }}>
                 <label style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Wallet Private Key</label>
-                <input type="text" autoComplete="off" spellCheck="false" data-lpignore="true" data-1p-ignore="true" value={privateKey} onChange={(e) => handlePrivateKeyChange(e.target.value)} disabled={isAirdropping} style={{ width: '100%', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', borderRadius: '8px', color: 'white', outline: 'none', WebkitTextSecurity: 'disc' }} placeholder="0x..." />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" autoComplete="off" spellCheck="false" data-lpignore="true" data-1p-ignore="true" value={privateKey} onChange={(e) => handlePrivateKeyChange(e.target.value)} disabled={isAirdropping} style={{ width: '100%', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', borderRadius: '8px', color: 'white', outline: 'none', WebkitTextSecurity: 'disc' }} placeholder="0x..." />
+                  {loadedKeys.length > 0 && (
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        onClick={() => setShowKeysDropdown(!showKeysDropdown)}
+                        disabled={isAirdropping}
+                        style={{ padding: '0 1rem', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', cursor: isAirdropping ? 'not-allowed' : 'pointer', height: '100%', whiteSpace: 'nowrap' }}
+                      >
+                        📂 Pilih Akun
+                      </button>
+                      {showKeysDropdown && (
+                        <div style={{ position: 'absolute', top: '110%', right: 0, width: '250px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', overflow: 'hidden', zIndex: 50, boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+                          {loadedKeys.map((acc, idx) => (
+                            <div 
+                              key={idx} 
+                              onClick={() => { handlePrivateKeyChange(acc.key); setShowKeysDropdown(false); }}
+                              style={{ padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#334155'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <span style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'white' }}>{acc.label}</span>
+                              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{acc.key.substring(0,6)}...{acc.key.substring(acc.key.length-4)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem' }}>
               <div style={{ flex: 2 }}>
                 <label style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Disperse Contract Address</label>
-                <input type="password" value={disperseContract} onChange={(e) => setDisperseContract(e.target.value)} disabled={isAirdropping} style={{ width: '100%', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }} />
+                <input type="text" value={disperseContract} onChange={(e) => setDisperseContract(e.target.value)} disabled={isAirdropping} style={{ width: '100%', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', borderRadius: '8px', color: 'white', outline: 'none' }} />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Nominal (Per Address)</label>
@@ -790,15 +842,15 @@ export default function AirdropPage() {
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               <label style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Daftar Address Penerima (Hasil Scan akan Otomatis Muncul di Sini)</label>
-              
+
               <div style={{ display: 'flex', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', overflow: 'hidden', minHeight: 0, flex: 1, marginBottom: '0.5rem' }}>
-                <div 
+                <div
                   id="wallet-line-numbers"
                   style={{ width: '65px', minWidth: '65px', padding: '1rem 0.5rem', background: 'rgba(255,255,255,0.02)', borderRight: '1px solid rgba(255,255,255,0.1)', color: '#64748b', textAlign: 'right', fontFamily: 'monospace', userSelect: 'none', overflow: 'hidden', whiteSpace: 'pre', lineHeight: '1.5', fontSize: '14px' }}
                 >
                   {walletList.split('\n').map((_, i) => (i + 1) + '.').join('\n')}
                 </div>
-                <textarea 
+                <textarea
                   value={walletList}
                   onChange={(e) => setWalletList(e.target.value)}
                   onScroll={(e) => { const ln = document.getElementById('wallet-line-numbers'); if (ln) ln.scrollTop = e.target.scrollTop; }}
@@ -808,7 +860,7 @@ export default function AirdropPage() {
                   placeholder={`0x123...456\n0xabc...def`}
                 />
               </div>
-              
+
               <div style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 'bold' }}>
                 Total Address Terdeteksi: {addressCount} address
               </div>
@@ -825,7 +877,7 @@ export default function AirdropPage() {
                 ))}
               </div>
             </div>
-            
+
             {!isAirdropping && !isConfirming ? (
               <button onClick={handleStartAirdrop} style={{ width: '100%', padding: '1rem', background: '#1c1c26', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}>
                 🎁 Mulai Airdrop
@@ -854,28 +906,28 @@ export default function AirdropPage() {
             </div>
             <div ref={terminalRef} style={{ flex: 1, padding: '1rem', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: '#00d180', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.5' }}>
               {terminalLog ? terminalLog.split('\n').map((line, i) => {
-                  let color = 'inherit';
-                  if (line.includes('* TOTAL GAS FEE') || line.includes('★ TOTAL GAS FEE')) color = 'orange';
-                  else if (line.includes('❌') || line.includes('ERROR')) color = '#ef4444';
-                  else if (line.includes('✅')) color = '#00d180';
-                  
-                  return (
-                    <div key={i} style={{ color, minHeight: '1.5em' }}>
-                      {line.includes('https://') ? (
-                          <>
-                            {line.split(/(https:\/\/\S+)/).map((part, j) => 
-                              part.startsWith('https://') ? 
-                                <a key={j} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline' }}>{part}</a> 
-                              : part
-                            )}
-                          </>
-                        ) : line}
-                    </div>
-                  );
-                }) : '>> Menunggu perintah...'}
+                let color = 'inherit';
+                if (line.includes('* TOTAL GAS FEE') || line.includes('★ TOTAL GAS FEE')) color = 'orange';
+                else if (line.includes('❌') || line.includes('ERROR')) color = '#ef4444';
+                else if (line.includes('✅')) color = '#00d180';
+
+                return (
+                  <div key={i} style={{ color, minHeight: '1.5em' }}>
+                    {line.includes('https://') ? (
+                      <>
+                        {line.split(/(https:\/\/\S+)/).map((part, j) =>
+                          part.startsWith('https://') ?
+                            <a key={j} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline' }}>{part}</a>
+                            : part
+                        )}
+                      </>
+                    ) : line}
+                  </div>
+                );
+              }) : '>> Menunggu perintah...'}
             </div>
           </div>
-          
+
         </div>
       </div>
 
@@ -888,8 +940,8 @@ export default function AirdropPage() {
             </div>
 
             {(() => {
-              const availableTokens = deployedTokens.filter(t => 
-                (!t.network || t.network === scanNetwork) && 
+              const availableTokens = deployedTokens.filter(t =>
+                (!t.network || t.network === scanNetwork) &&
                 (t.privateKey === privateKey)
               );
 

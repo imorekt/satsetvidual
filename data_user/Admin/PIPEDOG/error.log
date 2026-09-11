@@ -1,0 +1,7 @@
+[2026-09-09 16:25:25] ERROR: Koneksi RPC terputus (request timeout (code=TIMEOUT, version=6.17.0)...).
+[2026-09-09 16:25:27] ERROR: Gagal merotasi RPC: dex is not defined
+[2026-09-09 16:25:31] ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND base-mainnet.g.alchemy.com
+[2026-09-09 16:25:32] ERROR: Kesalahan saat memantau: getaddrinfo ENOTFOUND base-mainnet.g.alchemy.com
+[2026-09-09 16:25:33] ERROR: Gagal mengambil getLogs: server response 400 Bad Request (request={  }, response={  }, error=null, info={ "requestUrl": "https://base-mainnet.g.alchemy.com/public", "responseBody": "{\"jsonrpc\":\"2.0\",\"id\":4,\"error\":{\"code\":-32600,\"message\":\"You can make eth_getLogs requests with up to a 100 block range. Based on your parameters, this block range should work: [0x30b5535, 0x30b5598]\"}}", "responseStatus": "400 Bad Request" }, code=SERVER_ERROR, version=6.17.0)
+[2026-09-09 16:25:33] ERROR: Koneksi RPC terputus (server response 400 Bad Request (request={  }, res...).
+[2026-09-09 16:25:33] ERROR: Gagal merotasi RPC: dex is not defined
