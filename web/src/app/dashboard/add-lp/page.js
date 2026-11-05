@@ -44,10 +44,10 @@ const runDeployProcess = async (params) => {
   globalIsDeploying = true;
   globalIsProcessRunning = true;
 
-  const { deployNetwork, privateKey, tokenAddress, tokenAmount, initialPrice, minPrice, deployedTokens, telegramUser } = params;
+  const { deployNetwork, lpVersion = 'V4', privateKey, tokenAddress, tokenAmount, initialPrice, minPrice, deployedTokens, telegramUser } = params;
 
-  updateLogs("⏳ Sedang Menambah LP... Menunggu proses selesai...", mySessionId);
-  showNotificationGlobal(`Memulai proses Add LP on-chain ke ${deployNetwork}... (Berjalan di latar belakang)`);
+  updateLogs(`⏳ Sedang Menambah LP (Uniswap ${lpVersion})... Menunggu proses selesai...`, mySessionId);
+  showNotificationGlobal(`Memulai proses Add LP Uniswap ${lpVersion} on-chain ke ${deployNetwork}... (Berjalan di latar belakang)`);
 
   globalAbortController = new AbortController();
 
@@ -58,6 +58,7 @@ const runDeployProcess = async (params) => {
       signal: globalAbortController.signal,
       body: JSON.stringify({
         network: deployNetwork,
+        lpVersion,
         privateKey,
         tokenAddress,
         tokenAmount,
@@ -98,45 +99,6 @@ const runDeployProcess = async (params) => {
     if (data && data.success) {
       showNotificationGlobal('Add LP Berhasil!', 'success');
 
-      // Auto-save ke Screener V2 (gunakan data.poolUrl dari server langsung)
-      try {
-        if (data.poolUrl) {
-          const poolIdMatch = data.poolUrl.match(/(0x[a-fA-F0-9]{64})/);
-          const lpPool = poolIdMatch ? poolIdMatch[1] : null;
-          if (lpPool) {
-            let profileName = "ProfilBaru";
-            const profileObj = deployedTokens.find(t => t.ca.toLowerCase() === tokenAddress.toLowerCase());
-            if (profileObj && profileObj.name) profileName = profileObj.name;
-
-            const rpc = deployNetwork === 'BASE' ? 'https://mainnet.base.org' : 'https://rpc.mainnet.chain.robinhood.com';
-
-            fetch('/api/autosell/save', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userName: telegramUser,
-                profileName: profileName,
-                privateKey: privateKey,
-                inputCa: tokenAddress,
-                lpPool: lpPool,
-                rpc: rpc,
-                gasMultiplier: "1.2",
-                slippage: "30",
-                sellRatio: "100"
-              })
-            }).then(res => {
-              if (res.ok) {
-                if (privateKey) localStorage.setItem(`pk_${telegramUser}_${profileName}`, privateKey);
-                localStorage.setItem('activeProfile', profileName);
-                console.log("Berhasil auto-save profil ke Screener V2!");
-              }
-            });
-          }
-        }
-      } catch (e) {
-        console.error("Gagal auto-save ke Screener V2", e);
-      }
-
       // Unlock tombol segera setelah Add LP selesai (sebelum countdown)
       updateIsDeploying(false);
 
@@ -149,7 +111,7 @@ const runDeployProcess = async (params) => {
         let attempts = 1;
         while (!found) {
           if (mySessionId !== globalDeploySessionId) return; // Abort if session cleared
-          updateLogs(accumulatedLog + `\n    [*] Mendeteksi LP pasangan baru di Uniswap V4... (Percobaan ${attempts})`, mySessionId);
+          updateLogs(accumulatedLog + `\n    [*] Mendeteksi LP pasangan baru di Uniswap ${lpVersion}... (Percobaan ${attempts})`, mySessionId);
           
           try {
             const walletAddr = new ethers.Wallet(privateKey).address;
@@ -157,7 +119,7 @@ const runDeployProcess = async (params) => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               signal: globalAbortController.signal,
-              body: JSON.stringify({ network: deployNetwork, walletAddress: walletAddr })
+              body: JSON.stringify({ network: deployNetwork, walletAddress: walletAddr, lpVersion })
             });
             const checkData = await checkRes.json();
             
@@ -177,13 +139,13 @@ const runDeployProcess = async (params) => {
         if (mySessionId !== globalDeploySessionId) return;
         
         updateLogs(accumulatedLog + `\n    [+] Pasangan LP berhasil terdeteksi aktif di Pool!`, mySessionId);
-        updateLogs(accumulatedLog + `\n    [*] Menjalankan API Auto-Buy...`, mySessionId);
+        updateLogs(accumulatedLog + `\n    [*] Menjalankan API Auto-Buy (${lpVersion})...`, mySessionId);
         try {
           const buyRes = await fetch('/api/auto-buy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: globalAbortController.signal,
-            body: JSON.stringify({ network: deployNetwork, privateKey, tokenAddress })
+            body: JSON.stringify({ network: deployNetwork, privateKey, tokenAddress, lpVersion })
           });
           const buyData = await buyRes.json();
           if (mySessionId !== globalDeploySessionId) return;
@@ -227,24 +189,26 @@ const IconChevronDown = () => <svg viewBox="0 0 24 24" fill="none" stroke="curre
 
 export default function AddSingleLpPage() {
   const [deployNetwork, setDeployNetwork] = useState('BASE');
+  const [lpVersion, setLpVersion] = useState('V4');
   const [privateKey, setPrivateKey] = useState('');
   const [tokenAddress, setTokenAddress] = useState('');
   const [tokenAmount, setTokenAmount] = useState('');
-  const [selectedPriceTier, setSelectedPriceTier] = useState(0);
+  const [initialPriceInput, setInitialPriceInput] = useState('0.0000001');
+  const [minPriceInput, setMinPriceInput] = useState('0.0000002');
   const [isDeploying, setIsDeploying] = useState(false);
   const [isProcessRunning, setIsProcessRunning] = useState(false);
   const [deployResult, setDeployResult] = useState(null);
   const terminalRef = useRef(null);
 
   const states = useMemo(() => ({
-    deployNetwork, tokenAddress, tokenAmount, selectedPriceTier, maxSupply: 1000000000, selectedProfileId: 'manual'
-  }), [deployNetwork, tokenAddress, tokenAmount, selectedPriceTier]);
+    deployNetwork, lpVersion, tokenAddress, tokenAmount, maxSupply: 1000000000, selectedProfileId: 'manual'
+  }), [deployNetwork, lpVersion, tokenAddress, tokenAmount]);
 
   const setStates = useMemo(() => ({
     deployNetwork: setDeployNetwork,
+    lpVersion: setLpVersion,
     tokenAddress: setTokenAddress,
-    tokenAmount: setTokenAmount,
-    selectedPriceTier: setSelectedPriceTier
+    tokenAmount: setTokenAmount
   }), []);
 
   useFormCache('addLp', privateKey, states, setStates);
@@ -401,6 +365,14 @@ export default function AddSingleLpPage() {
       return;
     }
 
+    if (!initialPriceInput || isNaN(Number(initialPriceInput)) || Number(initialPriceInput) <= 0) {
+      showNotification('Initial Price harus diisi dengan angka yang valid!', 'error');
+      setDeployResult(
+        (prev) => (prev ? prev + '\n' : '') + `[!] GAGAL: Initial Price belum diisi atau tidak valid.`
+      );
+      return;
+    }
+
     // Pastikan tidak stuck dari run sebelumnya
     globalIsDeploying = false;
 
@@ -409,11 +381,12 @@ export default function AddSingleLpPage() {
     // Mulai proses
     runDeployProcess({
       deployNetwork,
+      lpVersion,
       privateKey,
       tokenAddress,
       tokenAmount,
-      initialPrice: priceTiers[selectedPriceTier].initial,
-      minPrice: priceTiers[selectedPriceTier].min,
+      initialPrice: initialPriceInput.trim(),
+      minPrice: (minPriceInput || initialPriceInput).trim(),
       deployedTokens,
       telegramUser
     });
@@ -429,22 +402,22 @@ export default function AddSingleLpPage() {
         </div>
       )}
 
-      <div style={{ background: '#0d0d12', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minHeight: 0 }}>
+      <div className="mev-panel" style={{ background: 'linear-gradient(135deg, rgba(13, 20, 36, 0.92) 0%, rgba(9, 14, 26, 0.85) 100%)', borderRadius: '12px', border: '1px solid rgba(0, 82, 255, 0.28)', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.55)', padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minHeight: 0 }}>
         {(userRole !== 'Premium' && userRole !== 'Developer') && (
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(5, 8, 17, 0.82)', backdropFilter: 'blur(6px)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}>
             <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🔒</div>
-            <h3 style={{ color: 'white', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Fitur Premium</h3>
+            <h3 style={{ color: 'white', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem', fontFamily: 'var(--font-display)' }}>Fitur Premium</h3>
             <p style={{ color: '#94a3b8', textAlign: 'center', maxWidth: '300px', fontSize: '0.85rem' }}>Fitur ini khusus untuk Member Premium. Masukkan kode premium di menu Profil untuk membuka kunci.</p>
           </div>
         )}
 
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: 'white', textAlign: 'center' }}>Add Single LP</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '1.25rem', color: '#f8fafc', textAlign: 'center' }}>Add Single LP</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '0.8rem', minHeight: 0 }}>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="addlp-wallet-row" style={{ display: 'flex', gap: '0.75rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '500', textAlign: 'center' }}>Wallet Private Key</label>
+              <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.45rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Wallet Private Key</label>
               <input
                 type="text"
                 autoComplete="off"
@@ -455,18 +428,19 @@ export default function AddSingleLpPage() {
                   localStorage.setItem('deploy_private_key', e.target.value);
                 }}
                 placeholder="0x..."
-                style={{ width: '100%', padding: '0.6rem 1rem', background: '#13131a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', outline: 'none', minHeight: 0, textAlign: 'center', WebkitTextSecurity: 'disc' }}
+                className="mev-input"
+                style={{ width: '100%', padding: '0.6rem 1rem', background: 'rgba(6, 10, 20, 0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f8fafc', fontFamily: 'var(--font-mono)', outline: 'none', minHeight: 0, textAlign: 'center', WebkitTextSecurity: 'disc' }}
               />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '500', textAlign: 'center' }}>Token Contract Address</label>
+              <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.45rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Token Contract Address</label>
               <button
                 onClick={() => setShowProfileModal(true)}
                 type="button"
-                style={{ width: '100%', padding: '0.6rem', background: '#1a1a24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s' }}
-                onMouseOver={(e) => { e.currentTarget.style.background = '#222230'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = '#1a1a24'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                style={{ width: '100%', padding: '0.6rem', background: 'rgba(13, 22, 40, 0.75)', border: '1px solid rgba(0, 242, 254, 0.25)', borderRadius: '8px', color: '#f8fafc', fontFamily: 'var(--font-mono)', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(0, 82, 255, 0.2)'; e.currentTarget.style.borderColor = 'rgba(0, 242, 254, 0.5)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(13, 22, 40, 0.75)'; e.currentTarget.style.borderColor = 'rgba(0, 242, 254, 0.25)'; }}
               >
                 {(() => {
                   if (selectedProfileId !== 'manual') {
@@ -479,49 +453,47 @@ export default function AddSingleLpPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '500', textAlign: 'center' }}>Pilih Price Tier (Initial & Min Price)</label>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {priceTiers.map((tier, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedPriceTier(index)}
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem',
-                    background: selectedPriceTier === index ? (deployNetwork === 'BASE' ? 'rgba(0, 82, 255, 0.08)' : 'rgba(0, 209, 128, 0.08)') : '#13131a',
-                    border: selectedPriceTier === index ? `1px solid ${deployNetwork === 'BASE' ? '#0052ff' : '#00d180'}` : '1px solid rgba(255,255,255,0.05)',
-                    borderRadius: '8px',
-                    color: selectedPriceTier === index ? 'white' : '#94a3b8',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    transition: 'all 0.3s'
-                  }}
-                  onMouseOver={(e) => { if (selectedPriceTier !== index) { e.currentTarget.style.background = '#1a1a24'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; } }}
-                  onMouseOut={(e) => { if (selectedPriceTier !== index) { e.currentTarget.style.background = '#13131a'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; } }}
-                >
-                  <div style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#94a3b8' }}>Initial:</span> <span style={{ color: selectedPriceTier === index ? (deployNetwork === 'BASE' ? '#0052ff' : '#00d180') : 'white', fontWeight: 'bold' }}>{tier.initial}</span>
-                  </div>
-                  <div style={{ fontSize: '0.75rem' }}>
-                    <span style={{ color: '#94a3b8' }}>Min:</span> <span style={{ color: selectedPriceTier === index ? (deployNetwork === 'BASE' ? '#0052ff' : '#00d180') : 'white', fontWeight: 'bold' }}>{tier.min}</span>
-                  </div>
-                </button>
-              ))}
+          <div className="addlp-price-row" style={{ display: 'flex', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.45rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+                Initial Price (ETH / Token)
+              </label>
+              <input
+                type="text"
+                value={initialPriceInput}
+                onChange={(e) => setInitialPriceInput(e.target.value)}
+                placeholder="Contoh: 0.0000001"
+                className="mev-input"
+                style={{ width: '100%', padding: '0.6rem 1rem', background: 'rgba(6, 10, 20, 0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f8fafc', fontFamily: 'var(--font-mono)', outline: 'none', minHeight: 0, textAlign: 'center' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.45rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+                Min Price (ETH / Token)
+              </label>
+              <input
+                type="text"
+                value={minPriceInput}
+                onChange={(e) => setMinPriceInput(e.target.value)}
+                placeholder="Contoh: 0.0000002"
+                className="mev-input"
+                style={{ width: '100%', padding: '0.6rem 1rem', background: 'rgba(6, 10, 20, 0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f8fafc', fontFamily: 'var(--font-mono)', outline: 'none', minHeight: 0, textAlign: 'center' }}
+              />
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '500', textAlign: 'center' }}>
-              Jumlah Token (LP) <span style={{ color: '#00be64', marginLeft: '0.3rem' }}>(Max: {maxSupply.toLocaleString()})</span>
+            <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.45rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+              Jumlah Token (LP) <span style={{ color: '#00c805', marginLeft: '0.3rem', fontFamily: 'var(--font-mono)' }}>(Max: {maxSupply.toLocaleString()})</span>
             </label>
             <input
               type="number"
               value={tokenAmount}
               onChange={(e) => setTokenAmount(e.target.value)}
               placeholder="Jumlah token..."
-              style={{ width: '100%', padding: '0.6rem 1rem', background: '#13131a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', outline: 'none', minHeight: 0, textAlign: 'center' }}
+              className="mev-input"
+              style={{ width: '100%', padding: '0.6rem 1rem', background: 'rgba(6, 10, 20, 0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f8fafc', fontFamily: 'var(--font-mono)', outline: 'none', minHeight: 0, textAlign: 'center' }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem', justifyContent: 'center' }}>
               {[25, 50, 75, 100].map((pct) => (
@@ -530,18 +502,19 @@ export default function AddSingleLpPage() {
                   onClick={() => setTokenAmount((maxSupply * (pct / 100)).toString())}
                   type="button"
                   style={{
-                    padding: '0.2rem 0.6rem',
-                    background: '#1a1a24',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    padding: '0.2rem 0.7rem',
+                    background: 'rgba(13, 22, 40, 0.75)',
+                    border: '1px solid rgba(0, 242, 254, 0.2)',
                     borderRadius: '20px',
                     color: '#94a3b8',
+                    fontFamily: 'var(--font-mono)',
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = '#222230'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = '#1a1a24'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(0, 82, 255, 0.25)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'rgba(0, 242, 254, 0.5)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(13, 22, 40, 0.75)'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(0, 242, 254, 0.2)'; }}
                 >
                   {pct === 100 ? 'Max' : `${pct}%`}
                 </button>
@@ -549,24 +522,46 @@ export default function AddSingleLpPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '500', textAlign: 'center' }}>Select Network</label>
-            <div style={{ display: 'flex', gap: '0.5rem', height: '39px' }}>
-              <button
-                onClick={() => setDeployNetwork('BASE')}
-                style={{ flex: 1, padding: '0.5rem', background: deployNetwork === 'BASE' ? 'rgba(0, 82, 255, 0.1)' : '#13131a', border: deployNetwork === 'BASE' ? '1px solid #0052ff' : '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: deployNetwork === 'BASE' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.3s' }}>
-                <span style={{ width: '10px', height: '10px', background: deployNetwork === 'BASE' ? '#0052ff' : 'transparent', border: deployNetwork === 'BASE' ? 'none' : '2px solid rgba(255,255,255,0.2)', borderRadius: '50%', display: 'inline-block' }}></span> BASE
-              </button>
-              <button
-                onClick={() => setDeployNetwork('ROBINHOOD')}
-                style={{ flex: 1, padding: '0.5rem', background: deployNetwork === 'ROBINHOOD' ? 'rgba(0, 190, 100, 0.1)' : '#13131a', border: deployNetwork === 'ROBINHOOD' ? '1px solid #00be64' : '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: deployNetwork === 'ROBINHOOD' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.3s' }}>
-                <span style={{ width: '10px', height: '10px', background: deployNetwork === 'ROBINHOOD' ? '#00be64' : 'transparent', border: deployNetwork === 'ROBINHOOD' ? 'none' : '2px solid rgba(255,255,255,0.2)', borderRadius: '50%', display: 'inline-block' }}></span> RBNHD
-              </button>
+          <div className="addlp-network-row" style={{ display: 'flex', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.45rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Select Version (V3 / V4)</label>
+              <div style={{ display: 'flex', gap: '0.5rem', height: '39px' }}>
+                <button
+                  type="button"
+                  onClick={() => setLpVersion('V3')}
+                  style={{ flex: 1, padding: '0.5rem', background: lpVersion === 'V3' ? 'rgba(0, 242, 254, 0.16)' : 'rgba(6, 10, 20, 0.85)', border: lpVersion === 'V3' ? '1px solid #00f2fe' : '1px solid rgba(255,255,255,0.08)', boxShadow: lpVersion === 'V3' ? '0 0 12px rgba(0, 242, 254, 0.25)' : 'none', borderRadius: '8px', color: lpVersion === 'V3' ? '#f8fafc' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.3s' }}>
+                  <span style={{ width: '10px', height: '10px', background: lpVersion === 'V3' ? '#00f2fe' : 'transparent', border: lpVersion === 'V3' ? 'none' : '2px solid rgba(255,255,255,0.2)', boxShadow: lpVersion === 'V3' ? '0 0 8px #00f2fe' : 'none', borderRadius: '50%', display: 'inline-block' }}></span> V3
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLpVersion('V4')}
+                  style={{ flex: 1, padding: '0.5rem', background: lpVersion === 'V4' ? 'rgba(168, 85, 247, 0.18)' : 'rgba(6, 10, 20, 0.85)', border: lpVersion === 'V4' ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.08)', boxShadow: lpVersion === 'V4' ? '0 0 12px rgba(168, 85, 247, 0.3)' : 'none', borderRadius: '8px', color: lpVersion === 'V4' ? '#f8fafc' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.3s' }}>
+                  <span style={{ width: '10px', height: '10px', background: lpVersion === 'V4' ? '#a855f7' : 'transparent', border: lpVersion === 'V4' ? 'none' : '2px solid rgba(255,255,255,0.2)', boxShadow: lpVersion === 'V4' ? '0 0 8px #a855f7' : 'none', borderRadius: '50%', display: 'inline-block' }}></span> V4
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.45rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Select Network</label>
+              <div style={{ display: 'flex', gap: '0.5rem', height: '39px' }}>
+                <button
+                  type="button"
+                  onClick={() => setDeployNetwork('BASE')}
+                  style={{ flex: 1, padding: '0.5rem', background: deployNetwork === 'BASE' ? 'rgba(0, 82, 255, 0.18)' : 'rgba(6, 10, 20, 0.85)', border: deployNetwork === 'BASE' ? '1px solid #0052ff' : '1px solid rgba(255,255,255,0.08)', boxShadow: deployNetwork === 'BASE' ? '0 0 12px rgba(0, 82, 255, 0.3)' : 'none', borderRadius: '8px', color: deployNetwork === 'BASE' ? '#f8fafc' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.3s' }}>
+                  <span style={{ width: '10px', height: '10px', background: deployNetwork === 'BASE' ? '#0052ff' : 'transparent', border: deployNetwork === 'BASE' ? 'none' : '2px solid rgba(255,255,255,0.2)', boxShadow: deployNetwork === 'BASE' ? '0 0 8px #0052ff' : 'none', borderRadius: '50%', display: 'inline-block' }}></span> BASE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeployNetwork('ROBINHOOD')}
+                  style={{ flex: 1, padding: '0.5rem', background: deployNetwork === 'ROBINHOOD' ? 'rgba(0, 200, 5, 0.16)' : 'rgba(6, 10, 20, 0.85)', border: deployNetwork === 'ROBINHOOD' ? '1px solid #00c805' : '1px solid rgba(255,255,255,0.08)', boxShadow: deployNetwork === 'ROBINHOOD' ? '0 0 12px rgba(0, 200, 5, 0.25)' : 'none', borderRadius: '8px', color: deployNetwork === 'ROBINHOOD' ? '#f8fafc' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.3s' }}>
+                  <span style={{ width: '10px', height: '10px', background: deployNetwork === 'ROBINHOOD' ? '#00c805' : 'transparent', border: deployNetwork === 'ROBINHOOD' ? 'none' : '2px solid rgba(255,255,255,0.2)', boxShadow: deployNetwork === 'ROBINHOOD' ? '0 0 8px #00c805' : 'none', borderRadius: '50%', display: 'inline-block' }}></span> RBNHD
+                </button>
+              </div>
             </div>
           </div>
 
-          <div style={{ flex: 1, background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.75rem', display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.3rem', fontWeight: 'bold' }}>Terminal Output:</div>
+          <div className="mev-terminal" style={{ flex: 1, background: 'radial-gradient(circle at top right, rgba(0, 242, 254, 0.04), transparent 70%), #02040a', border: '1px solid rgba(0, 242, 254, 0.22)', boxShadow: 'inset 0 1px 18px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 242, 254, 0.04)', borderRadius: '8px', padding: '0.75rem', display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
+            <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.3rem', fontFamily: 'var(--font-display)', fontWeight: 700, letterSpacing: '0.3px' }}>Terminal Output:</div>
             <button
               disabled={isProcessRunning}
               onClick={() => {
@@ -587,7 +582,7 @@ export default function AddSingleLpPage() {
               onMouseOver={e => { if(!isProcessRunning) { e.currentTarget.style.background = 'rgba(255,80,80,0.15)'; e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.borderColor = 'rgba(255,80,80,0.3)'; } }}
               onMouseOut={e => { if(!isProcessRunning) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; } }}
             >✕ Clear</button>
-            <pre ref={terminalRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-all', color: '#00d180', fontSize: '0.75rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', margin: 0 }}>
+            <pre ref={terminalRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-all', color: '#00f2fe', fontSize: '0.78rem', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', margin: 0 }}>
               {renderTerminalOutput(deployResult)}
             </pre>
           </div>
@@ -595,11 +590,11 @@ export default function AddSingleLpPage() {
           <button
             onClick={handleDeploy}
             disabled={isDeploying}
-            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', background: isDeploying ? '#222' : '#1a1a24', color: isDeploying ? '#888' : 'white', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', fontWeight: 'bold', cursor: isDeploying ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s', marginTop: '0.5rem' }}
-            onMouseOver={(e) => { if (!isDeploying) { e.currentTarget.style.background = '#222230'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; } }}
-            onMouseOut={(e) => { if (!isDeploying) { e.currentTarget.style.background = '#1a1a24'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; } }}
+            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', fontFamily: 'var(--font-display)', background: isDeploying ? 'rgba(13, 22, 40, 0.5)' : 'linear-gradient(135deg, rgba(0, 82, 255, 0.25) 0%, rgba(0, 242, 254, 0.15) 100%)', color: isDeploying ? '#64748b' : '#f8fafc', border: isDeploying ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0, 242, 254, 0.4)', boxShadow: isDeploying ? 'none' : '0 4px 18px rgba(0, 82, 255, 0.25)', borderRadius: '8px', fontWeight: 800, cursor: isDeploying ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s', marginTop: '0.5rem' }}
+            onMouseOver={(e) => { if (!isDeploying) { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 82, 255, 0.4) 0%, rgba(0, 242, 254, 0.25) 100%)'; e.currentTarget.style.borderColor = 'rgba(0, 242, 254, 0.7)'; } }}
+            onMouseOut={(e) => { if (!isDeploying) { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 82, 255, 0.25) 0%, rgba(0, 242, 254, 0.15) 100%)'; e.currentTarget.style.borderColor = 'rgba(0, 242, 254, 0.4)'; } }}
           >
-            <span style={{ fontSize: '1.1rem' }}>{isDeploying ? '⏳' : '💧'}</span> {isDeploying ? 'Adding Liquidity...' : 'Add Liquidity'}
+            <span style={{ fontSize: '1.1rem' }}>{isDeploying ? '⏳' : '💧'}</span> {isDeploying ? `Adding Liquidity (${lpVersion})...` : `Add Liquidity (${lpVersion})`}
           </button>
 
           <style>{`
@@ -622,10 +617,11 @@ export default function AddSingleLpPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: '#0d0d12', border: '1px solid rgba(255,255,255,0.1)', padding: '2rem', borderRadius: '12px', width: '90%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}
+            className="mev-panel"
+            style={{ background: 'linear-gradient(135deg, rgba(13, 20, 36, 0.96) 0%, rgba(9, 14, 26, 0.94) 100%)', border: '1px solid rgba(0, 82, 255, 0.3)', padding: '2rem', borderRadius: '12px', width: '90%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '1rem', boxShadow: '0 10px 30px rgba(0,0,0,0.65)' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <h3 style={{ color: 'white', fontSize: '1.2rem', margin: 0, fontWeight: 'bold' }}>Pilih Profil Token</h3>
+              <h3 style={{ color: '#f8fafc', fontFamily: 'var(--font-display)', fontSize: '1.2rem', margin: 0, fontWeight: 'bold' }}>Pilih Profil Token</h3>
               <button onClick={() => setShowProfileModal(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
 
@@ -638,7 +634,7 @@ export default function AddSingleLpPage() {
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <div
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        style={{ flex: 1, padding: '0.8rem', background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        style={{ flex: 1, padding: '0.8rem', background: 'rgba(6, 10, 20, 0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                       >
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
                           {selectedProfileId === 'manual'

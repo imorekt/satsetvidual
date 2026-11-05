@@ -1285,13 +1285,19 @@
     visibility: hidden !important;
   }
 
-  /* 4. Compact Responsive Header with Safe Areas */
+  /* 4. Compact Responsive Header with Safe Areas (Sticky on Mobile) */
   .dashboard-header,
   .dashboard-container.is-home-dashboard .dashboard-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 99990 !important;
+    background: rgba(5, 8, 17, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     height: auto !important;
     min-height: 48px !important;
-    margin: 0 0 0.75rem 0 !important;
-    padding: 0.5rem 0.65rem 0.5rem max(56px, calc(env(safe-area-inset-left, 0px) + 52px)) !important;
+    margin: 0 0 0.65rem 0 !important;
+    padding: 0.45rem 0.65rem 0.45rem max(56px, calc(env(safe-area-inset-left, 0px) + 52px)) !important;
     padding-top: max(0.45rem, env(safe-area-inset-top, 0px)) !important;
     padding-right: max(0.65rem, env(safe-area-inset-right, 0px)) !important;
     border-radius: 0 0 12px 12px !important;
@@ -1446,15 +1452,158 @@
   }
 
   .mev-panel {
-    padding: 1rem 0.85rem !important;
-    border-radius: 12px !important;
+    padding: 0.85rem 0.75rem !important;
+    border-radius: 10px !important;
     width: 100% !important;
     max-width: 100% !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     box-sizing: border-box !important;
   }
 
-  /* 6. Stack Multi-Column Desktop layouts into Clean Touch Vertical Stacks */
+  @media screen and (max-width: 480px) {
+    .mev-panel {
+      padding: 0.75rem 0.6rem !important;
+    }
+  }
+
+  /* 6. Typography Scale on Mobile: Compact & Elegant */
+  .mev-panel h1,
+  .mev-panel h2,
+  .dashboard-main h1,
+  .dashboard-main h2 {
+    font-size: 1.05rem !important;
+    letter-spacing: -0.2px !important;
+    margin: 0 0 0.45rem 0 !important;
+    line-height: 1.28 !important;
+    text-align: center !important;
+  }
+
+  .mev-panel > div:first-child[style*="borderBottom"],
+  .mev-panel > div:first-child[style*="border-bottom"] {
+    padding-bottom: 0.4rem !important;
+    margin-bottom: 0.65rem !important;
+  }
+
+  .dashboard-main p {
+    font-size: 0.75rem !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Compact Labels */
+  .mev-panel label,
+  .dashboard-main label {
+    font-size: 0.68rem !important;
+    letter-spacing: 0.3px !important;
+    margin-bottom: 0.22rem !important;
+    font-weight: 700 !important;
+    display: block !important;
+  }
+
+  /* Compact Touch-Friendly Inputs & Selects */
+  .mev-input,
+  .dashboard-main input[type="text"],
+  .dashboard-main input[type="number"],
+  .dashboard-main input[type="password"],
+  .dashboard-main select {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 0.65rem !important;
+    font-size: 0.80rem !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  .dashboard-main textarea {
+    font-size: 0.78rem !important;
+    padding: 0.5rem 0.65rem !important;
+    border-radius: 6px !important;
+  }
+
+  /* Primary Action Buttons */
+  .mev-panel button[style*="padding: '0.95rem'"],
+  .mev-panel button[style*="padding: 0.95rem"],
+  .mev-panel button[style*="padding: '1rem'"],
+  .mev-panel button[style*="padding: 1rem"],
+  .mev-panel button[style*="padding: '0.9rem'"],
+  .mev-panel button[style*="padding: 0.9rem"] {
+    padding: 0.6rem 0.8rem !important;
+    font-size: 0.82rem !important;
+    min-height: 38px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Form Stacking for Subpages */
+  .deploy-specs-row,
+  .addlp-wallet-row,
+  .scan-limit-network-row,
+  .airdrop-spec-row {
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+  }
+
+  .deploy-specs-row > div,
+  .addlp-wallet-row > div,
+  .scan-limit-network-row > div,
+  .airdrop-spec-row > div {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* Deploy Mode & Renounce Rows */
+  .deploy-mode-selector,
+  .deploy-renounce-row {
+    height: auto !important;
+    min-height: 38px !important;
+    flex-direction: row !important;
+    gap: 0.45rem !important;
+  }
+
+  .deploy-mode-selector button,
+  .deploy-renounce-row button {
+    padding: 0.4rem 0.5rem !important;
+    font-size: 0.74rem !important;
+    height: auto !important;
+    min-height: 36px !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+  }
+
+  /* Add LP Rows */
+  .addlp-price-row {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+  }
+
+  .addlp-price-row > div {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .addlp-network-row {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+  }
+
+  .addlp-network-row > div {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .addlp-network-row button {
+    height: 36px !important;
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.76rem !important;
+  }
+
+  /* Scan Alamat CA list rows */
+  .scan-limit-network-row select {
+    font-size: 0.78rem !important;
+  }
+
+  /* 7. Stack Multi-Column Desktop layouts into Clean Touch Vertical Stacks */
   div[style*="display: flex"][style*="gap: 2rem"],
   div[style*="display:flex"][style*="gap:2rem"],
   div[style*="gap: 2rem"],
@@ -1468,7 +1617,7 @@
   div[style*="gridTemplateColumns: 1fr 1fr"] {
     flex-direction: column !important;
     grid-template-columns: 1fr !important;
-    gap: 1.25rem !important;
+    gap: 1rem !important;
   }
 
   /* Reset hardcoded widths on mobile/landscape */
@@ -1489,22 +1638,6 @@
 
   div[style*="width: '200px'"],
   div[style*="width: 200px"] {
-    width: 100% !important;
-  }
-
-  /* Form Input Rows in Deploy Token / Add LP / Scan Alamat / Bulk Transfer */
-  div[style*="display: flex"][style*="gap: 0.85rem"],
-  div[style*="display: flex"][style*="gap: 0.65rem"],
-  div[style*="display: flex"][style*="gap: 0.5rem"],
-  div[style*="display: flex"][style*="gap: 1rem"] {
-    flex-wrap: wrap !important;
-  }
-
-  div[style*="flex: 1.2"],
-  div[style*="flex: 0.9"],
-  div[style*="flex: 1.1"],
-  div[style*="flex: 1.15"] {
-    flex: 1 1 100% !important;
     width: 100% !important;
   }
 
@@ -1532,29 +1665,28 @@
     box-sizing: border-box !important;
   }
 
-  /* 7. Terminals & Scrollable Outputs */
+  /* 8. Terminals & Scrollable Outputs: Compact & Clean */
   .mev-terminal,
   div[style*="background: #02040a"],
   div[style*="background:#02040a"],
   div[style*="font-family: monospace"][style*="overflow-y: auto"],
   div[style*="fontFamily: monospace"][style*="overflowY: auto"] {
-    min-height: 220px !important;
-    max-height: 380px !important;
+    min-height: 85px !important;
+    max-height: 145px !important;
     height: auto !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     word-break: break-all !important;
-    font-size: 0.72rem !important;
-    padding: 0.65rem 0.65rem !important;
+    font-size: 0.70rem !important;
+    padding: 0.45rem 0.6rem !important;
     box-sizing: border-box !important;
   }
 
-  /* 8. Text Wrapping & Touch-Friendly Sizing */
-  input, textarea, select {
-    font-size: 16px !important; /* Prevents auto-zoom on input focus */
-    max-width: 100% !important;
-    box-sizing: border-box !important;
+  .mev-terminal pre,
+  .dashboard-main pre {
+    font-size: 0.70rem !important;
+    line-height: 1.38 !important;
   }
 
   span[style*="font-family: monospace"],
@@ -1607,12 +1739,20 @@
   }
 
   .mev-panel {
-    padding: 0.75rem 0.85rem !important;
+    padding: 0.65rem 0.75rem !important;
+  }
+
+  .mev-panel h1,
+  .mev-panel h2,
+  .dashboard-main h1,
+  .dashboard-main h2 {
+    font-size: 0.95rem !important;
+    margin-bottom: 0.35rem !important;
   }
 
   .mev-terminal {
-    min-height: 160px !important;
-    max-height: 250px !important;
+    min-height: 75px !important;
+    max-height: 135px !important;
   }
 
   .mobile-sidebar-toggle-btn {
