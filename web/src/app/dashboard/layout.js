@@ -50,7 +50,6 @@ export default function DashboardLayout({ children }) {
   const [codeMessage, setCodeMessage] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isFiturLainnyaOpen, setIsFiturLainnyaOpen] = useState(false);
-  const [isAutoSellOpen, setIsAutoSellOpen] = useState(false);
   const [isMonitoringOpen, setIsMonitoringOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [lastSeenNotifCount, setLastSeenNotifCount] = useState(0);
@@ -69,9 +68,6 @@ export default function DashboardLayout({ children }) {
   };
 
   useEffect(() => {
-    if (pathname.startsWith('/dashboard/autosell')) {
-      setIsAutoSellOpen(true);
-    }
     if (pathname.startsWith('/dashboard/monitoring')) {
       setIsMonitoringOpen(true);
     }
@@ -261,7 +257,7 @@ export default function DashboardLayout({ children }) {
     return () => clearInterval(interval);
   }, [userName]);
 
-  // Scroll to top on route change or reload
+  // Scroll to top on route change or reload & auto-close sidebar on mobile
   useEffect(() => {
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
@@ -276,21 +272,61 @@ export default function DashboardLayout({ children }) {
     if (mainContent) {
       mainContent.scrollTop = 0;
     }
+
+    // Auto-close sidebar on mobile after clicking navigation
+    if (typeof window !== 'undefined' && (window.innerWidth <= 1024 || window.innerHeight <= 550)) {
+      setIsSidebarOpen(false);
+    }
   }, [pathname]);
+
+  // Initial detection: close sidebar by default on mobile on first mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.innerWidth <= 1024 || window.innerHeight <= 550)) {
+      setIsSidebarOpen(false);
+    }
+  }, []);
 
   if (!walletAddress) return null; // Prevent hydration flash
 
   return (
-    <div className={`dashboard-container ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`}>
-      <BackgroundCandles position="left" />
-      <BackgroundCandles position="right" />
-      <div className="glowing-arc"></div>
+    <div className={`dashboard-container ${!isSidebarOpen ? 'sidebar-collapsed' : ''} ${pathname === '/dashboard' ? 'is-home-dashboard' : ''}`}>
+      {/* Mobile Drawer Backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="sidebar-mobile-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Sidebar Toggle Button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsSidebarOpen(prev => !prev);
+        }}
+        className={`mobile-sidebar-toggle-btn ${isSidebarOpen ? 'is-open' : ''}`}
+        title={isSidebarOpen ? "Tutup Menu" : "Buka Menu"}
+        aria-label={isSidebarOpen ? "Tutup Menu" : "Buka Menu"}
+      >
+        {isSidebarOpen ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.5))' }}>
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.5))' }}>
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        )}
+      </button>
+
       {/* Sidebar */}
-      <aside className={`dashboard-sidebar ${!isSidebarOpen ? 'collapsed' : ''}`} style={{ background: '#131722' }}>
-        {/* Toggle Button */}
+      <aside className={`dashboard-sidebar ${!isSidebarOpen ? 'collapsed' : ''}`} style={{ background: 'rgba(5, 8, 17, 0.90)', backdropFilter: 'blur(20px)' }}>
+        {/* Desktop Toggle Button */}
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="sidebar-toggle-btn"
+          className="sidebar-toggle-btn desktop-sidebar-toggle"
           title={isSidebarOpen ? "Tutup Menu" : "Buka Menu"}
         >
           {isSidebarOpen ? (
@@ -306,9 +342,25 @@ export default function DashboardLayout({ children }) {
 
         <div style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <div className="sidebar-logo">
-            <div style={{ display: 'flex', alignItems: 'baseline' }}>
-              <span className="jtr" style={{ fontSize: '1.8rem', color: '#007bff', fontWeight: 800, fontStyle: 'italic', marginRight: 6 }}>SATSET</span>
-              <span style={{ fontSize: '1.2rem', fontWeight: 600, textTransform: 'uppercase', color: '#00e676' }}>Vidual</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <svg width="42" height="42" viewBox="0 0 64 64" style={{ width: '42px', height: '42px', minWidth: '42px', minHeight: '42px', flexShrink: 0, filter: 'drop-shadow(0 0 14px rgba(0, 242, 254, 0.35))' }}>
+                <defs>
+                  <linearGradient id="sideLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#f43f5e" />
+                    <stop offset="45%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#00f2fe" />
+                  </linearGradient>
+                </defs>
+                <rect width="64" height="64" rx="18" fill="url(#sideLogoGrad)" />
+                <path d="M35 11 L19 33 L30 33 L25 53 L45 27 L33 27 Z" fill="#ffea00" stroke="#111827" strokeWidth="2.5" strokeLinejoin="round" />
+              </svg>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.5px', background: 'linear-gradient(90deg, #fff, #cbd5e1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SATSET</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', fontWeight: 700, padding: '2px 5px', borderRadius: '4px', background: 'rgba(176, 38, 255, 0.15)', color: '#df9eff', border: '1px solid rgba(176, 38, 255, 0.3)', textTransform: 'uppercase' }}>VIDUAL</span>
+                </div>
+                <span style={{ fontSize: '0.62rem', color: '#94a3b8', letterSpacing: '0.2px' }}>Autonomous EVM Suite</span>
+              </div>
             </div>
           </div>
 
@@ -326,15 +378,6 @@ export default function DashboardLayout({ children }) {
             </a>
             {isMonitoringOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: '0', gap: '0.1rem', marginBottom: '0.5rem' }}>
-                <Link href="/dashboard/monitoring/screenerv2" className={pathname === '/dashboard/monitoring/screenerv2' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
-                  <span className="icon"><img src="https://dexscreener.com/favicon.png" width="14" height="14" alt="DS" style={{ borderRadius: '50%' }} /></span> Screener V2
-                </Link>
-                <Link href="/dashboard/monitoring/bulk-sell" className={pathname === '/dashboard/monitoring/bulk-sell' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
-                  <span className="icon" style={{ fontSize: '1rem' }}>🚀</span> Bulk Sell
-                </Link>
-                <Link href="/dashboard/monitoring/pumpfun-agent" className={pathname === '/dashboard/monitoring/pumpfun-agent' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
-                  <span className="icon" style={{ fontSize: '1rem' }}>💊</span> PumpFun Agent
-                </Link>
                 <Link href="/dashboard/monitoring/portofolio" className={pathname === '/dashboard/monitoring/portofolio' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
                   <span className="icon" style={{ fontSize: '1rem' }}>💰</span> Portofolio
                 </Link>
@@ -355,6 +398,9 @@ export default function DashboardLayout({ children }) {
                 </Link>
                 <Link href="/dashboard/fiturlainnya/os-eligible-checker" className={pathname === '/dashboard/fiturlainnya/os-eligible-checker' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
                   <span className="icon" style={{ fontSize: '1rem' }}>⛵</span> OS Eligible Checker
+                </Link>
+                <Link href="/dashboard/fiturlainnya/opensea-drop" className={pathname === '/dashboard/fiturlainnya/opensea-drop' ? 'active' : ''} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}>
+                  <span className="icon" style={{ fontSize: '1rem' }}>🌊</span> Opensea Drop
                 </Link>
               </div>
             )}
@@ -509,15 +555,11 @@ export default function DashboardLayout({ children }) {
           const pageInfo = (() => {
             if (pathname === '/dashboard') {
               return {
-                title: `Selamat datang, ${userName}! 👋`,
-                subtitle: 'Real-time telemetry, ERC-20 liquidity & multi-chain command center',
-                icon: '🏠',
-                tag: 'Overview',
-                badges: [
-                  { label: 'SYSTEM ONLINE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
-                  { label: 'ERC-20 ECOSYSTEM', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
-                  { label: 'FAST EVM EXECUTION', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' }
-                ]
+                title: 'MEV CORE',
+                subtitle: 'Autonomous Snipers & Universal Mempool Telemetry',
+                icon: '⚡',
+                tag: 'AGENT SUITE',
+                badges: []
               };
             }
             if (pathname.includes('/dashboard/scan-alamat')) {
@@ -569,45 +611,6 @@ export default function DashboardLayout({ children }) {
                   { label: 'BATCH DISPATCH', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
                   { label: 'MULTI-RECIPIENT', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' },
                   { label: 'GAS OPTIMIZER', dotColor: '#38bdf8', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.08)', border: 'rgba(56, 189, 248, 0.25)' }
-                ]
-              };
-            }
-            if (pathname.includes('/dashboard/monitoring/screenerv2')) {
-              return {
-                title: 'Screener V2',
-                subtitle: 'Live ERC-20 DEX radar, Uniswap/Pancake pool volume spikes & charts',
-                icon: '📊',
-                tag: 'Radar',
-                badges: [
-                  { label: 'DEX RADAR LIVE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
-                  { label: 'REALTIME VOLUME', dotColor: '#06b6d4', color: '#22d3ee', bg: 'rgba(6, 182, 212, 0.08)', border: 'rgba(6, 182, 212, 0.25)' },
-                  { label: 'HOT TRENDS 24H', dotColor: '#ec4899', color: '#f472b6', bg: 'rgba(236, 72, 153, 0.08)', border: 'rgba(236, 72, 153, 0.25)' }
-                ]
-              };
-            }
-            if (pathname.includes('/dashboard/monitoring/bulk-sell')) {
-              return {
-                title: 'Bulk Sell Engine',
-                subtitle: 'Multi-wallet mass ERC-20 liquidation & MEV-resistant take-profit exits',
-                icon: '⚡',
-                tag: 'Trading',
-                badges: [
-                  { label: 'AUTO-SELL ACTIVE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
-                  { label: 'ANTI-MEV SLIPPAGE', dotColor: '#f59e0b', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)' },
-                  { label: 'INSTANT LIQUIDATION', dotColor: '#f97316', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.08)', border: 'rgba(249, 115, 22, 0.25)' }
-                ]
-              };
-            }
-            if (pathname.includes('/dashboard/monitoring/pumpfun-agent')) {
-              return {
-                title: 'PumpFun Agent Suite',
-                subtitle: 'Autonomous AI agents, copy-trading engine & sniper telemetry',
-                icon: '💊',
-                tag: 'AI Engine',
-                badges: [
-                  { label: 'SOLANA MAINNET', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
-                  { label: 'JITO MEV READY', dotColor: '#f59e0b', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)' },
-                  { label: 'MULTI-AGENT AI', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.1)', border: 'rgba(168, 85, 247, 0.3)' }
                 ]
               };
             }
@@ -663,6 +666,19 @@ export default function DashboardLayout({ children }) {
                 ]
               };
             }
+            if (pathname.includes('/dashboard/fiturlainnya/opensea-drop')) {
+              return {
+                title: 'Opensea Drop',
+                subtitle: 'High-Speed Dual Multi-Bot NFT Drop Minting Engine',
+                icon: '🌊',
+                tag: 'Auto-Mint',
+                badges: [
+                  { label: 'DUAL BOT ENGINE', dotColor: '#00e676', color: '#00e676', bg: 'rgba(0, 230, 118, 0.08)', border: 'rgba(0, 230, 118, 0.25)' },
+                  { label: 'SEADROP V1/V2', dotColor: '#3b82f6', color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.25)' },
+                  { label: 'MULTI-WALLET BLAST', dotColor: '#a855f7', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)' }
+                ]
+              };
+            }
             return {
               title: 'SATSET VIDUAL',
               subtitle: 'High-Performance ERC-20 Trading Suite',
@@ -679,17 +695,19 @@ export default function DashboardLayout({ children }) {
             <header className="dashboard-header">
               {/* Left: Dynamic Page Title / Breadcrumb */}
               <div className="header-title-section">
-                <div className="header-icon-box">
-                  {pageInfo.icon}
-                </div>
+                {pathname === '/dashboard' ? (
+                  <div className="header-icon-box" style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #f43f5e, #f59e0b, #00f2fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', boxShadow: '0 0 20px rgba(0, 242, 254, 0.3)', flexShrink: 0 }}>
+                    ⚡
+                  </div>
+                ) : (
+                  <div className="header-icon-box">
+                    {pageInfo.icon}
+                  </div>
+                )}
                 <div>
                   <div className="header-title-row">
                     <h2 className="header-page-title">
-                      {pathname === '/dashboard' ? (
-                        <>Selamat datang, <span style={{ color: '#00e676' }}>{userName}</span>! 👋</>
-                      ) : (
-                        pageInfo.title
-                      )}
+                      {pageInfo.title}
                     </h2>
                     <span className="header-page-tag">{pageInfo.tag}</span>
                   </div>
@@ -699,32 +717,105 @@ export default function DashboardLayout({ children }) {
 
               {/* Center: Contextual Status Chips Per Page */}
               <div className="header-status-center">
-                {pageInfo.badges?.map((badge, idx) => (
-                  <div
-                    key={idx}
-                    className="header-status-pill"
-                    style={{
-                      background: badge.bg,
-                      borderColor: badge.border,
-                      color: badge.color
-                    }}
-                  >
-                    <span
-                      className="pulse-dot"
+                {pathname === '/dashboard' ? (
+                  <>
+                    <div className="header-status-pill" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(0, 82, 255, 0.45)', color: '#3b82f6' }}>
+                      <span className="pulse-dot" style={{ background: '#3b82f6', boxShadow: '0 0 8px #3b82f6' }}></span>
+                      <span>BASE MAINNET</span>
+                      <span style={{ color: '#64748b' }} id="baseBlock">#---</span>
+                    </div>
+                    <div className="header-status-pill" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(0, 200, 5, 0.45)', color: '#00c805' }}>
+                      <span className="pulse-dot" style={{ background: '#00c805', boxShadow: '0 0 8px #00c805' }}></span>
+                      <span>ROBINHOOD V4</span>
+                      <span style={{ color: '#64748b' }} id="robinBlock">#---</span>
+                    </div>
+                    <div className="header-status-pill" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(0, 242, 254, 0.4)', color: '#00f2fe' }}>
+                      <span className="pulse-dot" style={{ background: '#00f2fe', boxShadow: '0 0 8px #00f2fe' }}></span>
+                      <span id="globalTargetStatus">🌐 GLOBAL MONITORING (ALL CA)</span>
+                    </div>
+                  </>
+                ) : (
+                  pageInfo.badges?.map((badge, idx) => (
+                    <div
+                      key={idx}
+                      className="header-status-pill"
                       style={{
-                        background: badge.dotColor,
-                        boxShadow: `0 0 8px ${badge.dotColor}`
+                        background: badge.bg,
+                        borderColor: badge.border,
+                        color: badge.color
                       }}
-                    ></span>
-                    <span>{badge.label}</span>
-                  </div>
-                ))}
+                    >
+                      <span
+                        className="pulse-dot"
+                        style={{
+                          background: badge.dotColor,
+                          boxShadow: `0 0 8px ${badge.dotColor}`
+                        }}
+                      ></span>
+                      <span>{badge.label}</span>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Right: Search Slot & Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="header-right-wrap" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div id="header-search-slot"></div>
                 <div className="header-actions">
+                  {pathname === '/dashboard' && (
+                    <>
+                      <button
+                        className="btn-icon nav-notif-btn"
+                        id="btnNotifToggle"
+                        onClick={() => window.openNotifModal && window.openNotifModal()}
+                        title="Lihat Riwayat Notifikasi Detail"
+                        style={{
+                          background: 'rgba(0, 242, 254, 0.08)',
+                          border: '1px solid rgba(0, 242, 254, 0.35)',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          color: '#e2e8f0',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          fontFamily: 'var(--font-display)',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <span className="nav-btn-icon">🔔</span>
+                        <span className="nav-btn-text">Notifikasi</span>
+                        <span className="nav-pill-count notif-count" id="notifBadge" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', fontWeight: 800, padding: '1px 7px', borderRadius: '12px', background: 'rgba(0, 242, 254, 0.18)', color: '#00f2fe', border: '1px solid rgba(0, 242, 254, 0.4)' }}>0</span>
+                      </button>
+
+                      <button
+                        className="btn-icon nav-error-btn"
+                        id="btnErrorToggle"
+                        onClick={() => window.openErrorModal && window.openErrorModal()}
+                        title="Lihat Log Error & Debug Bot (RPC, Revert, Stderr)"
+                        style={{
+                          background: 'rgba(245, 158, 11, 0.08)',
+                          border: '1px solid rgba(245, 158, 11, 0.35)',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          color: '#fbbf24',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          fontFamily: 'var(--font-display)',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <span className="nav-btn-icon">⚠️</span>
+                        <span className="nav-btn-text">Error Log</span>
+                        <span className="nav-pill-count error-count" id="errorBadge" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', fontWeight: 800, padding: '1px 7px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.22)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.45)' }}>0</span>
+                      </button>
+                    </>
+                  )}
+            {pathname !== '/dashboard' && (
             <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
               <button className="notification-btn" onClick={handleToggleNotifMenu} style={{ position: 'relative' }}>
                 🔔
@@ -768,6 +859,7 @@ export default function DashboardLayout({ children }) {
                 </div>
               )}
             </div>
+            )}
 
             <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
               <button
