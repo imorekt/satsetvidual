@@ -143,6 +143,44 @@ export async function PUT(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
+
+    // Handler syncOnly: Sinkronisasi instan daftar address ke target.txt dan cache
+    if (body.syncOnly) {
+      const addrs = Array.isArray(body.addresses) ? body.addresses : [];
+      let syncedCount = 0;
+      try {
+        const robinDir = getRobinDir();
+        const targetTxtPath = getRobinTargetTxt();
+        if (fs.existsSync(robinDir)) {
+          let existingAddrs = new Set();
+          if (fs.existsSync(targetTxtPath)) {
+            const lines = fs.readFileSync(targetTxtPath, "utf8").split(/\r?\n/);
+            for (const l of lines) {
+              const clean = l.trim().toLowerCase();
+              if (isValidEvmAddress(clean)) existingAddrs.add(clean);
+            }
+          }
+
+          const freshAddrs = [];
+          for (const a of addrs) {
+            const lower = String(a).toLowerCase();
+            if (isValidEvmAddress(lower) && !existingAddrs.has(lower)) {
+              existingAddrs.add(lower);
+              freshAddrs.push(lower);
+            }
+          }
+
+          if (freshAddrs.length > 0) {
+            fs.appendFileSync(targetTxtPath, freshAddrs.join("\n") + "\n", "utf8");
+            syncedCount = freshAddrs.length;
+          }
+        }
+      } catch (syncErr) {
+        console.warn("[scan-robin syncOnly error]", syncErr.message);
+      }
+      return NextResponse.json({ ok: true, synced: syncedCount });
+    }
+
     const targetAddress = String(body.targetAddress || "").trim();
     const pages = Array.isArray(body.pages) && body.pages.length > 0 ? body.pages : [1];
     const mode = String(body.mode || "transaction").trim();
@@ -186,6 +224,19 @@ export async function POST(request) {
       let stdout = "";
       let stderr = "";
 
+      // Timeout 20 detik agar runner tidak pernah menggantung server
+      const timer = setTimeout(() => {
+        try {
+          if (child && !child.killed) {
+            child.kill("SIGTERM");
+            setTimeout(() => {
+              try { if (!child.killed) child.kill("SIGKILL"); } catch {}
+            }, 1000);
+          }
+        } catch {}
+        resolve({ code: 1, stdout, stderr: stderr + "\nTimeout: Eksekusi scanner runner melebihi 20 detik." });
+      }, 20000);
+
       child.stdout.on("data", (chunk) => {
         stdout += chunk.toString("utf8");
       });
@@ -195,10 +246,12 @@ export async function POST(request) {
       });
 
       child.on("error", (err) => {
+        clearTimeout(timer);
         resolve({ code: 1, stdout, stderr: stderr + "\n" + err.message });
       });
 
       child.on("close", (code) => {
+        clearTimeout(timer);
         resolve({ code, stdout, stderr });
       });
     });

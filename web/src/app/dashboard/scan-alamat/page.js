@@ -159,7 +159,7 @@ export default function ScanAlamatPage() {
   const [showCaModal, setShowCaModal] = useState(false);
   const [tempCaList, setTempCaList] = useState([]);
   const [newCaInput, setNewCaInput] = useState('');
-  const [durationMode, setDurationMode] = useState('5'); 
+  const [durationMode, setDurationMode] = useState('5');
   const [scanNetwork, setScanNetwork] = useState('BASE');
   // Pilihan Menu Scanner: '1' = Transaction (/txs?a=...), '2' = Token Transfer (/tokentxns?a=...)
   const [robinMenu, setRobinMenu] = useState('1');
@@ -198,7 +198,7 @@ export default function ScanAlamatPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [terminalLog, setTerminalLog] = useState('');
   const [uniqueAddresses, setUniqueAddresses] = useState([]);
-  
+
   const [isLoaded, setIsLoaded] = useState(false);
   const [userRole, setUserRole] = useState('Member');
 
@@ -241,7 +241,7 @@ export default function ScanAlamatPage() {
     if (typeof window !== 'undefined') {
       const role = localStorage.getItem('userRole') || 'Member';
       setUserRole(role);
-      
+
       const handleProfileUpdated = () => {
         setUserRole(localStorage.getItem('userRole') || 'Member');
       };
@@ -265,20 +265,20 @@ export default function ScanAlamatPage() {
           const parsed = JSON.parse(savedV3);
           applyCachedCaData(parsed);
           foundBrowserCache = true;
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (typeof sessionStorage !== 'undefined') {
         const savedLog = sessionStorage.getItem('websell_terminalLog');
         if (savedLog) setTerminalLog(savedLog);
-        
+
         const savedAddrs = sessionStorage.getItem('websell_uniqueAddresses');
         if (savedAddrs) {
           try {
             setUniqueAddresses(JSON.parse(savedAddrs));
-          } catch(e) {}
+          } catch (e) { }
         }
-        
+
         const scanning = sessionStorage.getItem('websell_isScanning');
         if (scanning === 'true') setIsScanning(true);
       }
@@ -293,7 +293,7 @@ export default function ScanAlamatPage() {
             }
           }
         })
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => {
           setIsLoaded(true);
         });
@@ -309,13 +309,13 @@ export default function ScanAlamatPage() {
         if (scanning === 'true') {
           const savedLog = sessionStorage.getItem('websell_terminalLog');
           if (savedLog && savedLog !== terminalLog) setTerminalLog(savedLog);
-          
+
           const savedAddrs = sessionStorage.getItem('websell_uniqueAddresses');
           if (savedAddrs) {
             try {
               const parsed = JSON.parse(savedAddrs);
               if (parsed.length !== uniqueAddresses.length) setUniqueAddresses(parsed);
-            } catch(e) {}
+            } catch (e) { }
           }
         }
         if (scanning === 'false' && isScanning) {
@@ -340,12 +340,12 @@ export default function ScanAlamatPage() {
     };
     try {
       localStorage.setItem('websell_scan_ca_cache_v3', JSON.stringify(payload));
-    } catch (e) {}
+    } catch (e) { }
     fetch('/api/scan-robin', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }).catch(() => {});
+    }).catch(() => { });
   }, [baseTxCaList, baseTokenFromCaList, baseTokenToCaList, robinTxCaList, robinTokenFromCaList, robinTokenToCaList, isLoaded]);
 
   useEffect(() => {
@@ -473,88 +473,169 @@ export default function ScanAlamatPage() {
       let pagesProcessed = 0;
       let progressLineAdded = false;
 
-      for (let startP = 1; startP <= targetPages; startP += BATCH_SIZE) {
-        if (checkAborted(signal)) break;
-        const endP = Math.min(startP + BATCH_SIZE, targetPages + 1);
-        const pagesToFetch = [];
-        for (let p = startP; p < endP; p++) pagesToFetch.push(p);
+      // Dapatkan blok terbaru dari Robinhood EVM RPC (EVM Chain ID: 4663)
+      let latestBlock = 0;
+      try {
+        const latestHex = await rpcRequest("eth_blockNumber", [], 0, true, 'ROBINHOOD');
+        latestBlock = parseInt(latestHex, 16);
+      } catch (err) {
+        latestBlock = 107000000;
+      }
 
-        const res = await fetch('/api/scan-robin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            targetAddress: ca,
-            pages: pagesToFetch,
-            mode: effectiveRobinMode,
-            maxAgeSeconds
-          }),
-          signal
-        });
+      // Rentang blok yang akan discan (Robinhood ~0.25s/block)
+      // rec_1000  -> ~350,000 blocks
+      // rec_5000  -> ~1,500,000 blocks
+      // rec_10000 -> ~3,500,000 blocks
+      let totalBlocksToScan = 350000;
+      if (durationMode === 'rec_5000') totalBlocksToScan = 1500000;
+      else if (durationMode === 'rec_10000') totalBlocksToScan = 3500000;
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `HTTP ${res.status}`);
+      const CHUNK_SIZE = 300000;
+      const chunks = [];
+      for (let offset = 0; offset < totalBlocksToScan; offset += CHUNK_SIZE) {
+        const chunkEnd = Math.max(0, latestBlock - offset);
+        const chunkStart = Math.max(0, chunkEnd - CHUNK_SIZE + 1);
+        if (chunkEnd <= 0) break;
+        chunks.push({ start: chunkStart, end: chunkEnd });
+      }
+
+      let stopTarget = false;
+
+      for (let cIdx = 0; cIdx < chunks.length; cIdx++) {
+        if (checkAborted(signal) || stopTarget) break;
+        const chunk = chunks[cIdx];
+
+        let logs = [];
+        try {
+          logs = await fetchRobinLogsAdaptive({
+            address: ca,
+            topics: robinMenu === '2' ? [SIG_TRANSFER] : []
+          }, chunk.start, chunk.end, signal);
+        } catch (e) {
+          logs = [];
         }
 
-        const data = await res.json();
-        const pageResults = data.results || [];
+        if (checkAborted(signal)) break;
 
-        let stopScanning = false;
+        if (robinMenu === '2') {
+          // Token Transfer: Ekstrak From/To langsung dari event log topics
+          const topicIdx = robinTransferDir === 'to' ? 2 : 1;
+          for (const log of logs) {
+            if (checkAborted(signal) || totalRecordsScanned >= maxRecords) {
+              stopTarget = true;
+              break;
+            }
+            if (Array.isArray(log.topics) && log.topics.length > topicIdx) {
+              const rawTopic = log.topics[topicIdx];
+              if (rawTopic && rawTopic.length >= 66) {
+                try {
+                  const parsedAddr = ethers.getAddress('0x' + rawTopic.slice(26)).toLowerCase();
+                  if (parsedAddr !== BURN_ADDRESS && parsedAddr !== ca) {
+                    if (!existingTargets.has(parsedAddr)) {
+                      existingTargets.add(parsedAddr);
+                      newAddressCount += 1;
+                    }
+                  }
+                } catch (e) {}
+              }
+            }
+            totalRecordsScanned += 1;
 
-        for (const pRes of pageResults) {
-          if (checkAborted(signal)) {
-            stopScanning = true;
-            break;
+            if (totalRecordsScanned % PAGE_SIZE === 0 || totalRecordsScanned >= maxRecords) {
+              pagesProcessed = Math.min(targetPages, Math.ceil(totalRecordsScanned / PAGE_SIZE));
+              const msg = `    🚀 Halaman ${String(pagesProcessed).padStart(3, ' ')}/${targetPages} | Record: ${totalRecordsScanned.toLocaleString()} | ${colLabel}: +${newAddressCount.toLocaleString()} | Total Unik di Web: ${existingTargets.size.toLocaleString()}`;
+              if (!progressLineAdded) {
+                addLog(msg);
+                progressLineAdded = true;
+              } else {
+                addLogReplaceLast(msg);
+              }
+              const currentArr = Array.from(existingTargets);
+              setUniqueAddresses(currentArr);
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('websell_uniqueAddresses', JSON.stringify(currentArr));
+              }
+            }
           }
-
-          const addrs = pRes.addresses || [];
-          const rowCount = pRes.rowCount || 0;
-          const isLast = pRes.isLastPage;
-          const reachedTime = pRes.reachedTimeLimit;
-
-          totalRecordsScanned += rowCount;
-          pagesProcessed += 1;
-
-          for (const addr of addrs) {
-            const lower = addr.toLowerCase();
-            if (!existingTargets.has(lower)) {
-              existingTargets.add(lower);
-              newAddressCount += 1;
+        } else {
+          // Transaction: Kumpulkan transactionHash unik lalu fetch tx details batch 50
+          const txHashes = [];
+          const seenInChunk = new Set();
+          for (const l of logs) {
+            if (l.transactionHash && !seenInChunk.has(l.transactionHash)) {
+              seenInChunk.add(l.transactionHash);
+              txHashes.push(l.transactionHash);
             }
           }
 
-          const msg = `    🚀 Halaman ${String(pagesProcessed).padStart(3, ' ')}/${targetPages} | Record: ${totalRecordsScanned.toLocaleString()} | ${colLabel}: +${newAddressCount.toLocaleString()} | Total Unik di Web: ${existingTargets.size.toLocaleString()}`;
-          if (!progressLineAdded) {
-            addLog(msg);
-            progressLineAdded = true;
-          } else {
-            addLogReplaceLast(msg);
-          }
+          const rpcBatchSize = 50;
+          for (let idx = 0; idx < txHashes.length; idx += rpcBatchSize) {
+            if (checkAborted(signal) || totalRecordsScanned >= maxRecords) {
+              stopTarget = true;
+              break;
+            }
+            const txBatch = txHashes.slice(idx, idx + rpcBatchSize);
+            const payload = txBatch.map((h, i) => ({
+              jsonrpc: "2.0", id: i, method: "eth_getTransactionByHash", params: [h]
+            }));
 
-          if (reachedTime) {
-            stopScanning = true;
-            addLog(`    [i] Batas waktu (${limitLabel}) tercapai pada halaman ${pagesProcessed}. Selesai memindai target ini.`);
-            break;
-          }
+            try {
+              const txResults = await rpcBatchRequest(payload, 0, true, 'ROBINHOOD');
+              for (const item of txResults) {
+                const t = item.result;
+                if (t && t.from) {
+                  try {
+                    const fromAddr = ethers.getAddress(t.from).toLowerCase();
+                    if (fromAddr !== BURN_ADDRESS && fromAddr !== ca) {
+                      if (!existingTargets.has(fromAddr)) {
+                        existingTargets.add(fromAddr);
+                        newAddressCount += 1;
+                      }
+                    }
+                  } catch (e) {}
+                }
+              }
+            } catch (e) {}
 
-          if (isLast || (rowCount === 0 && pRes.isLastPage)) {
-            stopScanning = true;
-            break;
+            totalRecordsScanned += txBatch.length;
+            pagesProcessed = Math.min(targetPages, Math.ceil(totalRecordsScanned / PAGE_SIZE));
+            const msg = `    🚀 Halaman ${String(pagesProcessed).padStart(3, ' ')}/${targetPages} | Record: ${totalRecordsScanned.toLocaleString()} | ${colLabel}: +${newAddressCount.toLocaleString()} | Total Unik di Web: ${existingTargets.size.toLocaleString()}`;
+            if (!progressLineAdded) {
+              addLog(msg);
+              progressLineAdded = true;
+            } else {
+              addLogReplaceLast(msg);
+            }
+            const currentArr = Array.from(existingTargets);
+            setUniqueAddresses(currentArr);
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.setItem('websell_uniqueAddresses', JSON.stringify(currentArr));
+            }
           }
         }
+      }
 
-        const currentArr = Array.from(existingTargets);
-        setUniqueAddresses(currentArr);
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('websell_uniqueAddresses', JSON.stringify(currentArr));
-        }
-
-        if (stopScanning) break;
+      if (!progressLineAdded) {
+        pagesProcessed = 1;
+        const msg = `    🚀 Halaman   1/${targetPages} | Record: ${totalRecordsScanned.toLocaleString()} | ${colLabel}: +${newAddressCount.toLocaleString()} | Total Unik di Web: ${existingTargets.size.toLocaleString()}`;
+        addLog(msg);
       }
 
       grandRecordsScanned += totalRecordsScanned;
       grandNewAdded += newAddressCount;
       addLog(`    ✓ Selesai Target ${ca.slice(0, 10)}...${ca.slice(-6)}: ${totalRecordsScanned.toLocaleString()} record discan | +${newAddressCount.toLocaleString()} address unik didapat.`);
+
+      // Sinkronisasi otomatis ke backend (target.txt) secara non-blocking
+      try {
+        fetch('/api/scan-robin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            syncOnly: true,
+            addresses: Array.from(existingTargets)
+          })
+        }).catch(() => {});
+      } catch (e) {}
     }
 
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -589,7 +670,7 @@ export default function ScanAlamatPage() {
       sessionStorage.setItem('websell_abortScan', 'false');
     }
     setUniqueAddresses([]);
-    
+
     abortControllerRef.current = new AbortController();
     const signal = abortControllerRef.current.signal;
 
@@ -608,10 +689,10 @@ export default function ScanAlamatPage() {
         : `Transaction (/txs?a=CA)`;
       addLog(`\n📄 Ditemukan ${activeCAs.length} Contract Address yang aktif (${baseModeLabel}).`);
       addLog("🔍 Mengecek blok terbaru di jaringan BASE...");
-      
+
       const latestBlockHex = await rpcRequest("eth_blockNumber", []);
       const latestBlock = parseInt(latestBlockHex, 16);
-      
+
       const blocksPerHour = 1800; // Base ~2s/block
       let blocksBack = blocksPerHour * 24;
       if (durationMode === '5') blocksBack = blocksPerHour * 24;
@@ -633,13 +714,13 @@ export default function ScanAlamatPage() {
         let ca;
         try {
           ca = ethers.getAddress(caRaw);
-        } catch(e) {
+        } catch (e) {
           addLog(`❌ CA tidak valid, dilewati: ${caRaw}${caLabel}`);
           continue;
         }
 
-        addLog(`\n[${i+1}/${activeCAs.length}] Memindai CA: ${ca}${caLabel} [${baseModeLabel}]`);
-        
+        addLog(`\n[${i + 1}/${activeCAs.length}] Memindai CA: ${ca}${caLabel} [${baseModeLabel}]`);
+
         // --- TAHAP 1 ---
         addLog(`\n🚀 [Tahap 1] Mengumpulkan rekam jejak interaksi...`);
         const batchSize = 2000;
@@ -647,7 +728,7 @@ export default function ScanAlamatPage() {
         for (let b = startBlock; b <= latestBlock; b += batchSize) {
           chunks.push({ start: b, end: Math.min(b + batchSize - 1, latestBlock) });
         }
-        
+
         const txHashes = new Set();
         const directTokenTransferAddrs = new Set();
         let logsDone = 0;
@@ -667,7 +748,7 @@ export default function ScanAlamatPage() {
                   address: ca,
                   topics: robinMenu === '2' ? [SIG_TRANSFER] : []
                 }]);
-                
+
                 for (const log of logs) {
                   if (robinMenu === '2' && Array.isArray(log.topics) && log.topics.length >= 3) {
                     const rawTopic = robinTransferDir === 'to' ? log.topics[2] : log.topics[1];
@@ -677,12 +758,12 @@ export default function ScanAlamatPage() {
                         if (parsedAddr.toLowerCase() !== BURN_ADDRESS && parsedAddr.toLowerCase() !== ca.toLowerCase()) {
                           directTokenTransferAddrs.add(parsedAddr);
                         }
-                      } catch (e) {}
+                      } catch (e) { }
                     }
                   }
                   if (log.transactionHash) txHashes.add(log.transactionHash);
                 }
-              } catch(e) {
+              } catch (e) {
               }
               logsDone++;
               const pct = ((logsDone / chunkList.length) * 100).toFixed(1);
@@ -740,7 +821,7 @@ export default function ScanAlamatPage() {
             while (index < chunkList.length && !checkAborted(signal)) {
               const current = index++;
               const chunk = chunkList[current];
-              
+
               const payload = chunk.map((hash, i) => ({
                 jsonrpc: "2.0", id: i, method: "eth_getTransactionByHash", params: [hash]
               }));
@@ -751,10 +832,10 @@ export default function ScanAlamatPage() {
                   if (res.result) {
                     const txData = res.result;
                     if (txData.from) {
-                      try { uniqueFromAddrs.add(ethers.getAddress(txData.from)); } catch(e) {}
+                      try { uniqueFromAddrs.add(ethers.getAddress(txData.from)); } catch (e) { }
                     }
                     if (txData.to) {
-                      try { uniqueToAddrs.add(ethers.getAddress(txData.to)); } catch(e) {}
+                      try { uniqueToAddrs.add(ethers.getAddress(txData.to)); } catch (e) { }
                     }
                   }
                 }
@@ -779,7 +860,7 @@ export default function ScanAlamatPage() {
 
         await runStage2(txChunks);
         if (signal.aborted) break;
-        
+
         if (robinMenu === '2') {
           if (robinTransferDir === 'to') {
             addLog(`\n✅ Memilih Kolom [To]: +${uniqueToAddrs.size} dompet unik.`);
@@ -796,7 +877,7 @@ export default function ScanAlamatPage() {
           for (const a of uniqueToAddrs) allFoundAddresses.add(a);
         }
       }
-      
+
       if (checkAborted(signal)) {
         addLog(`\n\n🛑 Proses dibatalkan.`);
       } else {
@@ -924,7 +1005,7 @@ export default function ScanAlamatPage() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 2rem', width: '100%', maxWidth: '1200px', margin: '0 auto', height: 'calc(100vh - 90px - 1.5rem)', maxHeight: 'calc(100vh - 90px - 1.5rem)', minHeight: 0, minWidth: 0 }}>
       <div className="mev-panel" style={{ background: 'linear-gradient(135deg, rgba(13, 20, 36, 0.92) 0%, rgba(9, 14, 26, 0.85) 100%)', borderRadius: '12px', border: '1px solid rgba(0, 82, 255, 0.28)', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.55)', padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
-        
+
         {(userRole !== 'Premium' && userRole !== 'Developer') && (
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(5, 8, 17, 0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
@@ -938,9 +1019,9 @@ export default function ScanAlamatPage() {
             🔍 Scan Alamat — {scanNetwork === 'ROBINHOOD' ? 'RobinScan' : 'BaseScan'} {robinMenu === '1' ? '(/txs?a=CA)' : '(/tokentxns?a=CA)'}
           </h2>
         </div>
-        
+
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '1.25rem', minHeight: 0, minWidth: 0 }}>
-          
+
           <div style={{ display: 'flex', gap: '2rem', flex: 1, minHeight: 0, minWidth: 0 }}>
             {/* Input Kiri */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.85rem', minHeight: 0, minWidth: 0 }}>
@@ -1052,7 +1133,7 @@ export default function ScanAlamatPage() {
                       ? `Alamat Router / Contract ${scanNetwork} (/txs?a=CA)`
                       : `Alamat Token / Contract ${scanNetwork} (/tokentxns?a=CA)`}
                   </label>
-                  <button 
+                  <button
                     onClick={() => { setTempCaList([...caList]); setNewCaInput(''); setShowCaModal(true); }}
                     style={{ background: 'rgba(13, 22, 40, 0.75)', border: '1px solid rgba(0, 242, 254, 0.25)', cursor: 'pointer', padding: '0.25rem 0.7rem', display: 'flex', alignItems: 'center', gap: '0.3rem', borderRadius: '6px', color: '#00f2fe', fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontWeight: 'bold', transition: 'all 0.2s' }}
                     title="Setting CA"
@@ -1091,9 +1172,9 @@ export default function ScanAlamatPage() {
                             {item.address}
                           </span>
                         </div>
-                        <input 
-                          type="checkbox" 
-                          checked={item.checked} 
+                        <input
+                          type="checkbox"
+                          checked={item.checked}
                           onChange={(e) => {
                             const newList = [...caList];
                             newList[idx].checked = e.target.checked;
@@ -1106,14 +1187,14 @@ export default function ScanAlamatPage() {
                   )}
                 </div>
               </div>
-              
+
               <div className="scan-limit-network-row" style={{ display: 'flex', gap: '1rem', minWidth: 0 }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <label style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {scanNetwork === 'ROBINHOOD' ? 'Batas Pemindaian (Jumlah Record)' : 'Durasi (Ke belakang)'}
                   </label>
-                  <select 
-                    value={durationMode} 
+                  <select
+                    value={durationMode}
                     onChange={(e) => setDurationMode(e.target.value)}
                     className="mev-input"
                     style={{ width: '100%', minWidth: 0, padding: '0.75rem', background: 'rgba(6, 10, 20, 0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontFamily: 'var(--font-mono)', outline: 'none' }}
@@ -1152,9 +1233,9 @@ export default function ScanAlamatPage() {
               </div>
 
               {isScanning ? (
-                 <button onClick={handleStop} style={{ width: '100%', padding: '0.95rem', background: 'linear-gradient(135deg, #ef4444, #b91c1c)', color: 'white', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-display)', fontWeight: 800, cursor: 'pointer', transition: 'all 0.3s' }}>
+                <button onClick={handleStop} style={{ width: '100%', padding: '0.95rem', background: 'linear-gradient(135deg, #ef4444, #b91c1c)', color: 'white', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-display)', fontWeight: 800, cursor: 'pointer', transition: 'all 0.3s' }}>
                   🛑 Hentikan Scan
-                 </button>
+                </button>
               ) : (
                 <button onClick={handleScan} style={{ width: '100%', padding: '0.95rem', background: 'linear-gradient(135deg, rgba(0, 82, 255, 0.35) 0%, rgba(0, 242, 254, 0.2) 100%)', color: 'white', border: '1px solid rgba(0, 242, 254, 0.45)', boxShadow: '0 4px 18px rgba(0, 82, 255, 0.25)', borderRadius: '8px', fontFamily: 'var(--font-display)', fontWeight: 800, cursor: 'pointer', transition: 'all 0.3s' }}>
                   🚀 Mulai Scan {robinMenu === '1' ? '(/txs?a=CA)' : `(/tokentxns - ${robinTransferDir.toUpperCase()})`}
@@ -1183,7 +1264,7 @@ export default function ScanAlamatPage() {
               </pre>
             </div>
           </div>
-          
+
         </div>
       </div>
 
@@ -1241,7 +1322,7 @@ export default function ScanAlamatPage() {
                   tempCaList.map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
                       <span style={{ color: 'white', fontFamily: 'monospace', fontSize: '0.85rem', wordBreak: 'break-all' }}>{item.address}</span>
-                      <button 
+                      <button
                         onClick={() => {
                           const newList = [...tempCaList];
                           newList.splice(idx, 1);
